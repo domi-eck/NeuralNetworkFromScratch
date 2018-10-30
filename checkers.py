@@ -16,7 +16,8 @@ class Checker:
         matBoard    = (np.outer(vector10, vector10) + 1) / 2
         self.matBoard    = matBoard * 255
     def show(self):
-        plt.imshow(self.matBoard, cmap='gray')
+      #  plt.imshow(self.matBoard, cmap='gray')
+      plt.imshow(self.matBoard)
 
 
 if __name__ == '__main__':
