@@ -17,10 +17,10 @@ class Checker:
         self.matBoard    = matBoard * 255
     def show(self):
       #  plt.imshow(self.matBoard, cmap='gray')
-      plt.imshow(self.matBoard)
+      plt.imshow(self.matBoard, cmap='gray')
 
 
 if __name__ == '__main__':
-    checker = Checker(800,8)
+    checker = Checker(200,8)
     checker.draw()
     checker.show()

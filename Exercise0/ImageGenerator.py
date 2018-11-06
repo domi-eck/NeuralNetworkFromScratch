@@ -14,7 +14,7 @@ class Image:
 
 class ImageGenerator:
     def __init__(self):
-        with open("Exercise0/Labels.json") as json_data:
+        with open("Labels.json") as json_data:
             self.d_labels = json.load(json_data)
 
         self.switcher = {
@@ -29,10 +29,11 @@ class ImageGenerator:
             9: "truck",
             10: "mysterius",
             0: "airplane"
+
         }
         # read all the images in a list of images
         # self.l_images = np.array([np.load("Exercise0/exercise_data/" + str(k) + ".npy") for k in range(100)])
-        self.l_images = np.array([Image("Exercise0/exercise_data/" + str(k) + ".npy", self.d_labels[str(k)], self.switcher[self.d_labels[str(k)]], k) for k in range(100)])
+        self.l_images = np.array([Image("exercise_data/" + str(k) + ".npy", self.d_labels[str(k)], self.switcher[self.d_labels[str(k)]], k) for k in range(100)])
         self.mirroring()
         self.rotate90()
         # read the python dictionary out of the json file
