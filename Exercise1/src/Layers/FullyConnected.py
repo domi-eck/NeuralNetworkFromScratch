@@ -3,13 +3,14 @@ import numpy as np
 class FullyConnected:
     def __init__(self, input_size, output_size):
         self.W = np.random.rand(input_size, output_size)
+        self.delta = 1
         print(self.W)
 
     def forward(self, input_tensor):
         return np.dot(input_tensor, self.W)
 
-    def backward(self, input_tensor):
-        dummy = 1
+    def backward(self, error_tensor):
+        return np.dot(error_tensor, self.W.transpose())
 
 
 if __name__ == '__main__':
