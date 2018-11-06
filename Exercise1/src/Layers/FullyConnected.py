@@ -1,0 +1,19 @@
+import numpy as np
+
+class FullyConnected:
+    def __init__(self, input_size, output_size):
+        self.W = np.random.rand(input_size, output_size)
+        print(self.W)
+
+    def forward(self, input_tensor):
+        return np.dot(input_tensor, self.W)
+
+    def backward(self, input_tensor):
+        dummy = 1
+
+
+if __name__ == '__main__':
+    dummy = 1
+    fc = FullyConnected(3, 2)
+    output_tensor = fc.forward(np.random.rand(2, 3))
+    print(output_tensor)
