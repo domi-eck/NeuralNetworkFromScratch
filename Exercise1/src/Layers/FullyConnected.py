@@ -6,11 +6,16 @@ class FullyConnected:
         self.delta = 1
         print(self.W)
 
+
     def forward(self, input_tensor):
+        self.last_input_tensor = input_tensor
         return np.dot(input_tensor, self.W)
 
+
     def backward(self, error_tensor):
+        self.W = self.W - self.delta * np.dot(self.last_input_tensor.transpose(), error_tensor)
         return np.dot(error_tensor, self.W.transpose())
+
 
 
 if __name__ == '__main__':
