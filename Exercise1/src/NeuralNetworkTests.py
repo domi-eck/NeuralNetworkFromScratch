@@ -1,6 +1,8 @@
 import sys
 
-sys.path.append("")
+
+sys.path.append(sys.path)
+
 
 import unittest
 from .Layers import *
