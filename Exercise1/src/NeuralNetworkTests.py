@@ -1,10 +1,13 @@
 
 import unittest
-from Exercise1.src.Layers import *
-from Exercise1.src.Layers import FullyConnected
-import numpy as np
-import Exercise1.src.NeuralNetwork
+
 import matplotlib.pyplot as plt
+import numpy as np
+
+from Exercise1.src.Layers import FullyConnected
+from Exercise1.src.Layers import ReLU
+from Exercise1.src.Layers import SoftMax
+from Exercise1.src.Layers import *
 
 
 class TestFullyConnected(unittest.TestCase):
