@@ -1,9 +1,9 @@
 
 import unittest
-#from .Layers import *
+from Exercise1.src.Layers import *
 from Exercise1.src.Layers import FullyConnected
 import numpy as np
-import NeuralNetwork
+import Exercise1.src.NeuralNetwork
 import matplotlib.pyplot as plt
 
 
