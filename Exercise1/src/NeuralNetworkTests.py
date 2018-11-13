@@ -1,11 +1,7 @@
-import sys
-
-
-sys.path.append(sys.path)
-
 
 import unittest
-from .Layers import *
+#from .Layers import *
+from Exercise1.src.Layers import FullyConnected
 import numpy as np
 import NeuralNetwork
 import matplotlib.pyplot as plt
