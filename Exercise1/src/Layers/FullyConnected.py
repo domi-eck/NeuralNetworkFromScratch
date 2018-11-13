@@ -13,9 +13,14 @@ class FullyConnected:
 
 
     def backward(self, error_tensor):
-        self.weights = self.weights - self.delta * np.dot(self.last_input_tensor.transpose(), error_tensor)
+
+        self.gradient = np.dot(self.last_input_tensor.transpose(), error_tensor)
+        self.weights = self.weights - self.delta * self.gradient
+
         return np.dot(error_tensor, self.weights.transpose())
 
+    def get_gradient_weights(self):
+        return self.gradient
 
 
 if __name__ == '__main__':
