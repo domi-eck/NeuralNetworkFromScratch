@@ -30,6 +30,8 @@ def gradient_check(layers, input_tensor, label_tensor):
             upper_error = layers[-1].forward(plus_epsilon, label_tensor)
             lower_error = layers[-1].forward(minus_epsilon, label_tensor)
 
+
+
             numerical_derivative = (upper_error - lower_error) / (2 * epsilon)
 
             normalizing_constant = max(np.abs(analytical_derivative), np.abs(numerical_derivative))

@@ -3,30 +3,13 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-resolution = 20
+a = np.arange(0, 9)
 
-vRed    = np.arange(1.0, 0.0, -1/resolution)
-vRed    = np.tile(vRed, resolution)
-vRed    = np.reshape(vRed, [resolution* resolution, 1])
+b = a.reshape([3, 3])
+print(b)
 
-vBlue   = np.arange(0.0, 1.0, 1/resolution)
-vBlue   = np.tile(vBlue, resolution)
-vBlue   = np.reshape(vBlue, [resolution* resolution, 1])
+c = 1/np.sum(b, 0)
 
-vGreen  = np.arange(0.0, 1.0, 1/resolution)
-vGreen  = np.arange(0.0, 1.0, 1/resolution)
-vGreen  = np.tile(vGreen, resolution)
-vGreen.sort()
-vGreen  = np.reshape(vGreen, [resolution*resolution, 1])
-
-
-#vRB = np.hstack((vRed, vBlue))
-#vRB = np.reshape(vRB, [resolution, 2])
-vRG = np.hstack((vRed, vGreen))
-vRGB = np.hstack((vRG, vBlue))
-print(vRGB)
-vRGB = np.reshape(vRGB, [resolution, resolution, 3])
-
-plt.imshow(vRGB)
-
-a =3
+b = np.diag(c)
+print(b)
+print(c)
