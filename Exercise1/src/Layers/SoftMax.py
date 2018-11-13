@@ -3,16 +3,14 @@ import numpy as np
 class SoftMax:
     def forward(self, input_tensor, label_tensor):
 
-        #input x
-        #label y
-        #predlabel y
-        self.input = input_tensor
+        input_tensor = input_tensor - np.max(input_tensor)
+        self.predict(input_tensor)
         a = np.exp(input_tensor)
 
-        colum_sums = 1/ np.sum(a, 0)
-        colum_sums = np.diag(colum_sums)
+        colum_row = 1/ np.sum(a, 1)
+        colum_row = np.diag(colum_row)
 
-        y_h = np.dot(a, colum_sums)
+        y_h = np.dot(colum_row, a)
         loss = 0
         lossA = label_tensor
         lossA = np.where(lossA == 1, -1 * np.log( y_h ) ,0)
@@ -21,6 +19,14 @@ class SoftMax:
         return np.sum(lossA)
 
     def backward(self, label_tensor):
-        a =2
+
+        return np.where(label_tensor == 1, self.y_h -1, self.y_h)
+
     def predict(self, input_tensor):
-        a = 2
+        a = np.exp(input_tensor)
+
+        colum_sums = 1/ np.sum(a, 1)
+        colum_sums = np.diag(colum_sums)
+
+        self.y_h = np.dot(colum_sums, a)
+        return(self.y_h)

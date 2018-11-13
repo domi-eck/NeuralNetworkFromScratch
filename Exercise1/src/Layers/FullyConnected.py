@@ -2,20 +2,23 @@ import numpy as np
 
 class FullyConnected:
     def __init__(self, input_size, output_size):
-        self.W = np.random.rand(input_size, output_size)
+        self.weights = np.random.rand(input_size, output_size)
         self.delta = 1
-        print(self.W)
+        print(self.weights)
 
 
     def forward(self, input_tensor):
         self.last_input_tensor = input_tensor
-        return np.dot(input_tensor, self.W)
+        return np.dot(input_tensor, self.weights)
 
 
     def backward(self, error_tensor):
-        self.W = self.W - self.delta * np.dot(self.last_input_tensor.transpose(), error_tensor)
-        return np.dot(error_tensor, self.W.transpose())
+        self.gradient = np.dot(self.last_input_tensor.transpose(), error_tensor)
+        self.weights = self.weights - self.delta * self.gradient
+        return np.dot(error_tensor, self.weights.transpose())
 
+    def _get_gradient_weights(self):
+        return self.gradient
 
 
 if __name__ == '__main__':
