@@ -9,6 +9,7 @@ from Exercise1.src.Layers import FullyConnected
 from Exercise1.src.Layers import ReLU
 from Exercise1.src.Layers import SoftMax
 from Exercise1.src.Layers import *
+from Exercise1.src import NeuralNetwork
 
 
 class TestFullyConnected(unittest.TestCase):
