@@ -1,5 +1,8 @@
 import unittest
-from Layers import *
+from Layers import FullyConnected
+from Layers import SoftMax
+from Layers import ReLU
+from Layers import  Helpers
 from Optimization import *
 import numpy as np
 from scipy import stats
