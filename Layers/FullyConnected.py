@@ -27,6 +27,8 @@ class FullyConnected:
     def get_gradient_weights(self):
         return self.gradient
 
+    def initialize(self, weights_initializer, bias_initializer):
+        dummy = 1
 
 if __name__ == '__main__':
     dummy = 1
