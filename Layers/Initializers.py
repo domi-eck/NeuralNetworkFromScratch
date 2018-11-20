@@ -4,7 +4,8 @@ import numpy as np
 
 class Constant:
     def initialize(self, weights_shape, fan_in, fan_out):
-        self.weights = np.ones([fan_in, fan_out])*self.c
+        c = 0.1 #value of constant
+        self.weights = np.ones([fan_in, fan_out])*c
         return self.weights
 
 
