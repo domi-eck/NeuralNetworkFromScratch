@@ -1,10 +1,17 @@
+import copy
+
 class NeuralNetwork:
-    def __init__(self):
+    def __init__(self, optimizer):
         self.loss = list()
         self.layers = list()
         self.data_layer = []
         self.loss_layer = []
         self._didForward = False
+        self.optimizer = optimizer
+
+    def append_trainable_layer(self, layer):
+        self.layers.append(copy.deepcopy(layer))
+
     def forward(self):
         self._input_tensor, self._label_tensor = self.data_layer.forward()
         nextInput = self.layers[0].forward(self._input_tensor)
