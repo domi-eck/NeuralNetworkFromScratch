@@ -9,6 +9,7 @@ class Conv:
         self.weights = np.array([])
         self.weights = np.ones([num_kernels, *convulution_shape])
         self.reshape = False
+        self.bias = np.ones(num_kernels)
 
     def forward(self, input_tensor):
 
@@ -69,7 +70,7 @@ class Conv:
                         tensor_for_multiply = padded_input_tensor[:, y: (y + conv_y_size), x:(x + conv_x_size)]
                         # make one convolution, first multiply with the weights and the sum over it to get one value
                         output_tensor[batch, kernel][y_out][x_out] = np.sum(
-                            np.multiply(tensor_for_multiply, self.weights[kernel]))
+                            np.multiply(tensor_for_multiply, self.weights[kernel])) + self.bias[kernel]
                         x_out += 1
                     y_out += 1
 
