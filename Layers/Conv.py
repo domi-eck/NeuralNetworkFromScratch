@@ -8,8 +8,16 @@ class Conv:
         self.learning_rate = learning_rate
         self.weights = np.array([])
         self.weights = np.ones([num_kernels, *convulution_shape])
+        self.reshape = False
 
     def forward(self, input_tensor):
+
+        #if 1D array, add one dimension
+        if np.size(input_tensor.shape) is 3:
+            input_tensor = np.expand_dims(input_tensor, 3)
+            self.stride_shape = np.array([*self.stride_shape, 1])
+            self.conv_shape = np.array([*self.conv_shape, 1])
+            self.reshape = True
 
         input_x_size = input_tensor.shape[3]  # starting with 0
         input_y_size = input_tensor.shape[2]  # starting with 0
@@ -61,10 +69,14 @@ class Conv:
                         tensor_for_multiply = padded_input_tensor[:, y: (y + conv_y_size), x:(x + conv_x_size)]
                         # make one convolution, first multiply with the weights and the sum over it to get one value
                         output_tensor[batch, kernel][y_out][x_out] = np.sum(
-                            np.multiply(tensor_for_multiply, self.weights))
+                            np.multiply(tensor_for_multiply, self.weights[kernel]))
                         x_out += 1
                     y_out += 1
 
+        #If there is a One day array remove added dimension which was added in the beginning
+        if self.reshape is True:
+            output_tensor = np.reshape(output_tensor, [output_tensor.shape[0], output_tensor.shape[1],
+                                       output_tensor.shape[2]])
         return output_tensor
 
     def backward(self, backward_tensor):
