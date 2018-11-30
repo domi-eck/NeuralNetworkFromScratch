@@ -2,7 +2,9 @@ import unittest
 from Layers import FullyConnected
 from Layers import SoftMax
 from Layers import ReLU
-from Layers import  Helpers
+from Layers import Helpers
+from Layers import Flatten
+from Layers import Pooling
 from Optimization import *
 import numpy as np
 from scipy import stats

@@ -2,9 +2,9 @@ import numpy as np
 from Optimizers import *
 
 class FullyConnected:
-    def __init__(self, input_size, output_size):
+    def __init__(self, input_size, output_size, dumm = 1):
         self.weights = np.random.rand(input_size +1, output_size)
-        self.delta = 1
+        self.delta = dumm
 
     def set_optimizer(self, optimizer):
         self.optimizer = optimizer
