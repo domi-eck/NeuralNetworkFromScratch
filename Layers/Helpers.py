@@ -9,6 +9,7 @@ from sklearn.datasets import load_iris, load_digits
 def gradient_check(layers, input_tensor, label_tensor):
     epsilon = 1e-5
     difference = np.zeros_like(input_tensor)
+    num = np.zeros_like(input_tensor)
 
     activation_tensor = input_tensor.copy()
     for layer in layers[:-1]:
@@ -35,8 +36,7 @@ def gradient_check(layers, input_tensor, label_tensor):
         lower_error = layers[-1].forward(minus_epsilon, label_tensor)
 
         numerical_derivative = (upper_error - lower_error) / (2 * epsilon)
-
-        # print('Analytical: ' + str(analytical_derivative) + ' vs Numerical :' + str(numerical_derivative))
+        #print('Analytical: ' + str(analytical_derivative) + ' vs Numerical :' + str(numerical_derivative) + ' index ' + str(it.multi_index))
         normalizing_constant = max(np.abs(analytical_derivative), np.abs(numerical_derivative))
 
         if normalizing_constant < 1e-15:
