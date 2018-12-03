@@ -11,7 +11,7 @@ class Conv:
         self.weights        = np.array([])
         self.weights        = np.ones([num_kernels, *convulution_shape])
         self.reshape        = False
-        self.bias           = np.ones(num_kernels)
+        self.bias           = np.zeros(num_kernels)
         self.input_tensor   = []
 
         '''variables which are used for forward and backward'''
@@ -88,18 +88,13 @@ class Conv:
         self.padded_input_tensor = np.concatenate([y_left_padding, self.padded_input_tensor], 2)
         self.padded_input_tensor = np.concatenate([self.padded_input_tensor, y_right_padding], 2)
 
+        '''Calculate and Init the Output Tensor'''
+        self.out_x = np.int(np.ceil(self.input_x_size / self.x_stride))
+        self.out_y = np.int(np.ceil(self.input_y_size / self.y_stride))
 
+        self.output_tensor = np.zeros([self.batch_num, self.num_kernels, self.out_y, self.out_x])
 
         for batch in np.arange(input_tensor.shape[0]):
-
-            '''Calculate and Init the Output Tensor'''
-            self.out_x = np.int(np.ceil(self.input_x_size / self.x_stride))
-            self.out_y = np.int(np.ceil(self.input_y_size / self.y_stride))
-
-            self.output_tensor = np.zeros([self.batch_num, self.num_kernels, self.out_y, self.out_x])
-
-
-
             '''Calculate Convolution for each kernel and each x and y dimension'''
             # loop over every y value with the right stride size
             for kernel in np.arange(self.num_kernels):
@@ -112,7 +107,7 @@ class Conv:
                         tensor_for_multiply = self.padded_input_tensor[batch][:, y: (y + self.conv_y_size),
                                               x:(x + self.conv_x_size)]
                         # make one convolution, first multiply with the weights and the sum over it to get one value
-                        self.output_tensor[batch, kernel][y_out][x_out] = np.sum(
+                        self.output_tensor[batch, kernel, y_out, x_out] = np.sum(
                             np.multiply(tensor_for_multiply, self.weights[kernel])) + self.bias[kernel]
                         x_out += 1
                     y_out += 1
@@ -136,13 +131,11 @@ class Conv:
             # loop over every x value with the right stride size
             x_out = 0
             for x in np.arange(0, self.input_x_size, self.x_stride):
-
-                '''Do The Backward Convolution'''
-                tensor_for_multiply = self.padded_input_tensor[:,:, y: (y + self.conv_y_size),
-                                      x:(x + self.conv_x_size)]
-
                 for kernel in np.arange(self.num_kernels):
                     for batch in np.arange(self.batch_num):
+                        '''Do The Backward Convolution'''
+                        tensor_for_multiply = self.padded_input_tensor[batch, kernel, y: (y + self.conv_y_size),
+                                              x:(x + self.conv_x_size)]
                         self.gradient_weights[kernel] += \
                             tensor_for_multiply[batch]*backward_tensor[batch, kernel][y_out][x_out]
 
