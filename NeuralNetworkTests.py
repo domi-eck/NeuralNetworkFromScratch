@@ -6,6 +6,7 @@ from Layers import Helpers
 from Layers import Flatten
 from Layers import Pooling
 from Layers import Conv
+from Layers import Initializers
 
 from Optimization import Optimizers
 
