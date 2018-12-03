@@ -5,7 +5,8 @@ from Layers import ReLU
 from Layers import Helpers
 from Layers import Flatten
 from Layers import Pooling
-from Optimization import *
+from Layers import Conv
+from Optimization import Optimizers
 import numpy as np
 from scipy import stats
 from scipy.ndimage.filters import gaussian_filter

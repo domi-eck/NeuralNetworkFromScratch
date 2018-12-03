@@ -1,5 +1,5 @@
 import numpy as np
-from Optimizers import *
+from Optimization import Optimizers
 
 class FullyConnected:
     def __init__(self, input_size, output_size, dumm = 1):
