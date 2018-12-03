@@ -38,6 +38,9 @@ class Conv:
         fan_out = np.product([*self.weights[0][0].shape, self.num_kernels])
         self.weights = weights_initializer.initialize(self.weights.shape, fan_in, fan_out)
 
+    def get_gradient_weights(self):
+        return self.gradient_weights
+
 
     def forward(self, input_tensor):
 
@@ -88,16 +91,14 @@ class Conv:
         self.padded_input_tensor = np.concatenate([y_left_padding, self.padded_input_tensor], 2)
         self.padded_input_tensor = np.concatenate([self.padded_input_tensor, y_right_padding], 2)
 
+        '''Calculate and Init the Output Tensor'''
+        self.out_x = np.int(np.ceil(self.input_x_size / self.x_stride))
+        self.out_y = np.int(np.ceil(self.input_y_size / self.y_stride))
+
+        self.output_tensor = np.zeros([self.batch_num, self.num_kernels, self.out_y, self.out_x])
 
 
         for batch in np.arange(input_tensor.shape[0]):
-
-            '''Calculate and Init the Output Tensor'''
-            self.out_x = np.int(np.ceil(self.input_x_size / self.x_stride))
-            self.out_y = np.int(np.ceil(self.input_y_size / self.y_stride))
-
-            self.output_tensor = np.zeros([self.batch_num, self.num_kernels, self.out_y, self.out_x])
-
 
 
             '''Calculate Convolution for each kernel and each x and y dimension'''
@@ -158,8 +159,12 @@ class Conv:
         x_end = self.error_tensor.shape[3]  - self.num_x_right_zeros
 
         '''Update Kernels'''
-        for kernel in np.arange(self.num_kernels):
-            self.weights[kernel] -= self.gradient_weights[kernel]
+        if hasattr(self, 'optimizer'):
+            for kernel in np.arange(self.num_kernels):
+                self.weights[kernel] = self.optimizer.calculate_update(1, self.weights[kernel], self.gradient_weights[kernel])
+        # else:
+        #     for kernel in np.arange(self.num_kernels):
+        #         self.weights[kernel] -= self.learning_rate*self.gradient_weights[kernel]
 
         return self.error_tensor[:,:, self.num_y_left_zeros: y_end, self.num_x_left_zeros : x_end ]
 
