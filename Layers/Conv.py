@@ -11,6 +11,15 @@ class Conv:
         self.reshape = False
         self.bias = np.ones(num_kernels)
 
+        '''variables which are used for forward and backward'''
+        self.input_x_size = 0
+        self.input_y_size = 0
+        self.x_stride = 0
+        self.y_stride = 0
+        self.conv_x_size = 0
+        self.conv_y_size = 0
+        self.batch_num = 0
+
     def forward(self, input_tensor):
 
         #if 1D array, add one dimension
@@ -20,21 +29,21 @@ class Conv:
             self.conv_shape = np.array([*self.conv_shape, 1])
             self.reshape = True
 
-        input_x_size = input_tensor.shape[3]  # starting with 0
-        input_y_size = input_tensor.shape[2]  # starting with 0
-        x_stride = self.stride_shape[1]
-        y_stride = self.stride_shape[0]
-        conv_x_size = self.conv_shape[2]
-        conv_y_size = self.conv_shape[1]
-        batch_num = input_tensor.shape[0]
+        self.input_x_size = input_tensor.shape[3]  # starting with 0
+        self.input_y_size = input_tensor.shape[2]  # starting with 0
+        self.x_stride = self.stride_shape[1]
+        self.y_stride = self.stride_shape[0]
+        self.conv_x_size = self.conv_shape[2]
+        self.conv_y_size = self.conv_shape[1]
+        self.batch_num = input_tensor.shape[0]
 
         for batch in np.arange(input_tensor.shape[0]):
 
             '''Calculate and Init the Output Tensor'''
-            out_x = np.int(np.ceil(input_x_size / x_stride))
-            out_y = np.int(np.ceil(input_y_size / y_stride))
+            out_x = np.int(np.ceil(self.input_x_size / self.x_stride))
+            out_y = np.int(np.ceil(self.input_y_size / self.y_stride))
 
-            output_tensor = np.zeros([batch_num, self.num_kernels, out_y, out_x])
+            output_tensor = np.zeros([self.batch_num, self.num_kernels, out_y, out_x])
 
             '''Same Padding: tries to pad evenly left and right, but if the amount of columns to be added is odd, 
             it will add the extra column to the right, as is the case in this example (the same logic applies 
@@ -43,16 +52,16 @@ class Conv:
 
             '''Same - Padding is calculated as described above'''
             x_left_padding = np.zeros([input_tensor[batch].shape[0], input_tensor[batch].shape[1],
-                                       np.int(np.floor((conv_x_size - 1) / 2))])
+                                       np.int(np.floor((self.conv_x_size - 1) / 2))])
             x_right_padding = np.zeros([input_tensor[batch].shape[0], input_tensor[batch].shape[1],
-                                        np.int(np.ceil((conv_x_size - 1) / 2))])
+                                        np.int(np.ceil((self.conv_x_size - 1) / 2))])
 
             padded_input_tensor = np.concatenate([x_left_padding, input_tensor[batch]], 2)
             padded_input_tensor = np.concatenate([padded_input_tensor, x_right_padding], 2)
 
-            y_left_padding = np.zeros([padded_input_tensor.shape[0], np.int(np.floor((conv_y_size - 1) / 2)),
+            y_left_padding = np.zeros([padded_input_tensor.shape[0], np.int(np.floor((self.conv_y_size - 1) / 2)),
                                        padded_input_tensor.shape[2]])
-            y_right_padding = np.zeros([padded_input_tensor.shape[0], np.int(np.ceil((conv_y_size - 1) / 2)),
+            y_right_padding = np.zeros([padded_input_tensor.shape[0], np.int(np.ceil((self.conv_y_size - 1) / 2)),
                                         padded_input_tensor.shape[2]])
 
             padded_input_tensor = np.concatenate([y_left_padding, padded_input_tensor], 1)
@@ -62,12 +71,12 @@ class Conv:
             # loop over every y value with the right stride size
             for kernel in np.arange(self.num_kernels):
                 y_out = 0
-                for y in np.arange(0, input_y_size, y_stride):
+                for y in np.arange(0, self.input_y_size, self.y_stride):
                     # loop over every x value with the right stride size
                     x_out = 0
-                    for x in np.arange(0, input_x_size, x_stride):
+                    for x in np.arange(0, self.input_x_size, self.x_stride):
                         # get the tensor which will be multiplied with the kernel
-                        tensor_for_multiply = padded_input_tensor[:, y: (y + conv_y_size), x:(x + conv_x_size)]
+                        tensor_for_multiply = padded_input_tensor[:, y: (y + self.conv_y_size), x:(x + self.conv_x_size)]
                         # make one convolution, first multiply with the weights and the sum over it to get one value
                         output_tensor[batch, kernel][y_out][x_out] = np.sum(
                             np.multiply(tensor_for_multiply, self.weights[kernel])) + self.bias[kernel]
