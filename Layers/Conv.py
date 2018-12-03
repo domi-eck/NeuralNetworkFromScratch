@@ -37,6 +37,7 @@ class Conv:
         fan_in = np.product(self.weights[0].shape)
         fan_out = np.product([*self.weights[0][0].shape, self.num_kernels])
         self.weights = weights_initializer.initialize(self.weights.shape, fan_in, fan_out)
+        self.bias = bias_initializer.initialize(self.bias.shape, self.num_kernels, 1)
 
     def get_gradient_weights(self):
         return self.gradient_weights
@@ -170,9 +171,9 @@ class Conv:
         if hasattr(self, 'optimizer'):
             for kernel in np.arange(self.num_kernels):
                 self.weights[kernel] = self.optimizer.calculate_update(1, self.weights[kernel], self.gradient_weights[kernel])
-        # else:
-        #     for kernel in np.arange(self.num_kernels):
-        #         self.weights[kernel] -= self.learning_rate*self.gradient_weights[kernel]
+        else:
+             for kernel in np.arange(self.num_kernels):
+                 self.weights[kernel] -= self.learning_rate*self.gradient_weights[kernel]
 
         biasGradien = np.zeros_like(self.bias)
         for k in np.arange(backward_tensor.shape[1]):
