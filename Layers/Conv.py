@@ -123,9 +123,19 @@ class Conv:
             self.output_tensor = np.reshape(self.output_tensor,
                                             [self.output_tensor.shape[0], self.output_tensor.shape[1],
                                              self.output_tensor.shape[2]])
+            self.reshape = False
+
         return self.output_tensor
 
     def backward(self, backward_tensor):
+        # if 1D array, add one dimension
+        if np.size(backward_tensor.shape) is 3:
+            backward_tensor = np.expand_dims(backward_tensor, 3)
+            #self.stride_shape = np.array([*self.stride_shape, 1])
+            #self.conv_shape = np.array([*self.conv_shape, 1])
+            self.weights = np.expand_dims(self.weights, 3)
+            self.reshape = True
+
         '''Calculate gradient'''
         '''Calculate Convolution for each kernel and each x and y dimension'''
         # loop over every y value with the right stride size
@@ -166,5 +176,17 @@ class Conv:
         #     for kernel in np.arange(self.num_kernels):
         #         self.weights[kernel] -= self.learning_rate*self.gradient_weights[kernel]
 
-        return self.error_tensor[:,:, self.num_y_left_zeros: y_end, self.num_x_left_zeros : x_end ]
+        if self.reshape is True:
+            self.error_tensor = self.error_tensor[:, :, self.num_y_left_zeros: y_end, self.num_x_left_zeros: x_end]
+
+            self.error_tensor = np.reshape(self.error_tensor,
+                                            [self.error_tensor.shape[0], self.error_tensor.shape[1],
+                                             self.error_tensor.shape[2]])
+            self.weights = np.reshape(self.weights,
+                                      [self.weights.shape[0], self.weights.shape[1], self.weights.shape[2]])
+
+            return self.error_tensor
+
+        else:
+            return self.error_tensor[:,:, self.num_y_left_zeros: y_end, self.num_x_left_zeros : x_end ]
 
