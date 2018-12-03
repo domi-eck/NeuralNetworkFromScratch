@@ -12,6 +12,7 @@ class NeuralNetwork:
         self.optimizer = optimizer
 
     def append_trainable_layer(self, layer):
+        layer.set_optimizer(self.optimizer)
         layer.initialize(self.weights_initializer, self.bias_initializer)
         self.layers.append(copy.deepcopy(layer))
 

@@ -3,15 +3,16 @@ from Optimization import Optimizers
 
 
 class Conv:
-    def __init__(self, stride_shape, convulution_shape, num_kernels, learning_rate):
-        self.stride_shape = stride_shape
-        self.conv_shape = convulution_shape
-        self.num_kernels = num_kernels
-        self.learning_rate = learning_rate
-        self.weights = np.array([])
-        self.weights = np.ones([num_kernels, *convulution_shape])
-        self.reshape = False
-        self.bias = np.ones(num_kernels)
+    def __init__(self, stride_shape, convulution_shape, num_kernels, learning_rate=1):
+        self.stride_shape   = stride_shape
+        self.conv_shape     = convulution_shape
+        self.num_kernels    = num_kernels
+        self.learning_rate  = learning_rate
+        self.weights        = np.array([])
+        self.weights        = np.ones([num_kernels, *convulution_shape])
+        self.reshape        = False
+        self.bias           = np.ones(num_kernels)
+        self.input_tensor   = []
 
         '''variables which are used for forward and backward'''
         self.input_x_size = 0
@@ -47,6 +48,7 @@ class Conv:
             self.conv_shape = np.array([*self.conv_shape, 1])
             self.reshape = True
 
+
         self.input_x_size = input_tensor.shape[3]  # starting with 0
         self.input_y_size = input_tensor.shape[2]  # starting with 0
         self.input_z_size = input_tensor.shape[1]
@@ -55,6 +57,7 @@ class Conv:
         self.conv_x_size = self.conv_shape[2]
         self.conv_y_size = self.conv_shape[1]
         self.batch_num = input_tensor.shape[0]
+
 
         '''Same Padding: tries to pad evenly left and right, but if the amount of columns to be added is odd, 
         it will add the extra column to the right, as is the case in this example (the same logic applies 
@@ -159,3 +162,4 @@ class Conv:
             self.weights[kernel] -= self.gradient_weights[kernel]
 
         return self.error_tensor[:,:, self.num_y_left_zeros: y_end, self.num_x_left_zeros : x_end ]
+

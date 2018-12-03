@@ -3,9 +3,10 @@ import numpy as np
 
 
 class Constant:
+    def __init__(self, constant):
+        self.c = constant
     def initialize(self, weights_shape, fan_in, fan_out):
-        c = 0.1 #value of constant
-        self.weights = np.ones([fan_in, fan_out])*c
+        self.weights = np.ones([fan_in, fan_out])*self.c
         return self.weights
 
 

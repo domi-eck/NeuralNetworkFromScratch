@@ -6,7 +6,9 @@ from Layers import Helpers
 from Layers import Flatten
 from Layers import Pooling
 from Layers import Conv
+
 from Optimization import Optimizers
+
 import numpy as np
 from scipy import stats
 from scipy.ndimage.filters import gaussian_filter
