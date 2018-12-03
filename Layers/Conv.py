@@ -38,6 +38,9 @@ class Conv:
         fan_out = np.product([*self.weights[0][0].shape, self.num_kernels])
         self.weights = weights_initializer.initialize(self.weights.shape, fan_in, fan_out)
 
+    def get_gradient_weights(self):
+        return self.gradient_weights
+
 
     def forward(self, input_tensor):
 
@@ -94,6 +97,7 @@ class Conv:
 
         self.output_tensor = np.zeros([self.batch_num, self.num_kernels, self.out_y, self.out_x])
 
+
         for batch in np.arange(input_tensor.shape[0]):
             '''Calculate Convolution for each kernel and each x and y dimension'''
             # loop over every y value with the right stride size
@@ -107,7 +111,7 @@ class Conv:
                         tensor_for_multiply = self.padded_input_tensor[batch][:, y: (y + self.conv_y_size),
                                               x:(x + self.conv_x_size)]
                         # make one convolution, first multiply with the weights and the sum over it to get one value
-                        self.output_tensor[batch, kernel, y_out, x_out] = np.sum(
+                        self.output_tensor[batch, kernel][y_out][x_out] = np.sum(
                             np.multiply(tensor_for_multiply, self.weights[kernel])) + self.bias[kernel]
                         x_out += 1
                     y_out += 1
@@ -131,11 +135,13 @@ class Conv:
             # loop over every x value with the right stride size
             x_out = 0
             for x in np.arange(0, self.input_x_size, self.x_stride):
+
+                '''Do The Backward Convolution'''
+                tensor_for_multiply = self.padded_input_tensor[:,:, y: (y + self.conv_y_size),
+                                      x:(x + self.conv_x_size)]
+
                 for kernel in np.arange(self.num_kernels):
                     for batch in np.arange(self.batch_num):
-                        '''Do The Backward Convolution'''
-                        tensor_for_multiply = self.padded_input_tensor[batch, kernel, y: (y + self.conv_y_size),
-                                              x:(x + self.conv_x_size)]
                         self.gradient_weights[kernel] += \
                             tensor_for_multiply[batch]*backward_tensor[batch, kernel][y_out][x_out]
 
@@ -151,8 +157,20 @@ class Conv:
         x_end = self.error_tensor.shape[3]  - self.num_x_right_zeros
 
         '''Update Kernels'''
-        for kernel in np.arange(self.num_kernels):
-            self.weights[kernel] -= self.gradient_weights[kernel]
+        if hasattr(self, 'optimizer'):
+            for kernel in np.arange(self.num_kernels):
+                self.weights[kernel] = self.optimizer.calculate_update(1, self.weights[kernel], self.gradient_weights[kernel])
+        # else:
+        #     for kernel in np.arange(self.num_kernels):
+        #         self.weights[kernel] -= self.learning_rate*self.gradient_weights[kernel]
+
+        biasGradien = np.zeros_like(self.bias)
+        for k in np.arange(backward_tensor.shape[1]):
+            biasGradien[k] = np.sum(backward_tensor[:,k,:,:])
+        self.bias = biasGradien
 
         return self.error_tensor[:,:, self.num_y_left_zeros: y_end, self.num_x_left_zeros : x_end ]
+
+    def get_gradient_bias(self):
+        return self.bias
 
