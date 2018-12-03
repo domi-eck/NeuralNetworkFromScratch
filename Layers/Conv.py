@@ -1,15 +1,16 @@
 import numpy as np
 
 class Conv:
-    def __init__(self, stride_shape, convulution_shape, num_kernels, learning_rate):
-        self.stride_shape = stride_shape
-        self.conv_shape = convulution_shape
-        self.num_kernels = num_kernels
-        self.learning_rate = learning_rate
-        self.weights = np.array([])
-        self.weights = np.ones([num_kernels, *convulution_shape])
-        self.reshape = False
-        self.bias = np.ones(num_kernels)
+    def __init__(self, stride_shape, convulution_shape, num_kernels, learning_rate=1):
+        self.stride_shape   = stride_shape
+        self.conv_shape     = convulution_shape
+        self.num_kernels    = num_kernels
+        self.learning_rate  = learning_rate
+        self.weights        = np.array([])
+        self.weights        = np.ones([num_kernels, *convulution_shape])
+        self.reshape        = False
+        self.bias           = np.ones(num_kernels)
+        self.input_tensor   = []
 
     def forward(self, input_tensor):
 
@@ -19,7 +20,7 @@ class Conv:
             self.stride_shape = np.array([*self.stride_shape, 1])
             self.conv_shape = np.array([*self.conv_shape, 1])
             self.reshape = True
-
+        self.input_tensor = input_tensor
         input_x_size = input_tensor.shape[3]  # starting with 0
         input_y_size = input_tensor.shape[2]  # starting with 0
         x_stride = self.stride_shape[1]
@@ -81,4 +82,7 @@ class Conv:
         return output_tensor
 
     def backward(self, backward_tensor):
+        if(self.input_tensor.shape.count(3) == 1):
+            self.input_tensor = np.zeros( int(self.input_tensor[0]), int(self.input_tensor.shape[1]), int(self.input_tensor.shape[2]))
+        return np.zeros_like(self.input_tensor)
         dummy = 1

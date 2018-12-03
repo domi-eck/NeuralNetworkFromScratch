@@ -18,7 +18,7 @@ class Sgd:
         self.learningRate = lr
 
     def calculate_update(self, individual_delta, weight_tensor, gradient_tensor):
-        return weight_tensor - individual_delta * gradient_tensor
+        return weight_tensor -  self.learningRate * gradient_tensor
 
 class Adam:
     def __init__(self, lr=0.01, momentum=0.0, roh=0.0):
@@ -38,6 +38,6 @@ class Adam:
         #bais correction
         self.vkh = self.vk / (1 - np.power(self.momentum, self.iterations))
         self.rkh = self.rk / (1 - np.power(self.roh, self.iterations))
-        result = (weight_tensor - individual_delta * self.vkh / np.sqrt(self.rkh))
+        result = (weight_tensor - self.learningRate * self.vkh / np.sqrt(self.rkh))
         self.iterations += 1
         return result

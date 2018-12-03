@@ -5,6 +5,8 @@ from Layers import ReLU
 from Layers import Helpers
 from Layers import Flatten
 from Layers import Pooling
+from Layers import Conv
+from Layers import Initializers
 from Optimization import *
 import numpy as np
 from scipy import stats

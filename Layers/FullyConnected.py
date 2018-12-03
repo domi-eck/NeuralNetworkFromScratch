@@ -2,7 +2,7 @@ import numpy as np
 from Optimizers import *
 
 class FullyConnected:
-    def __init__(self, input_size, output_size, dumm = 1):
+    def __init__(self, input_size, output_size, dumm = 0):
         self.input_size = input_size
         self.output_size = output_size
         self.weights = np.random.rand(input_size +1, output_size)
@@ -41,7 +41,7 @@ class FullyConnected:
     def initialize(self, weights_initializer, bias_initializer):
         self.weights = weights_initializer.initialize(np.array([self.input_size, self.output_size]), self.input_size,
                                                       self.output_size)
-        self.bias = bias_initializer([1, self.output_size], 1, self.output_size)
+        self.bias = bias_initializer.initialize([1, self.output_size], 1, self.output_size)
         self.weights = np.vstack([self.weights, self.bias])
 
 
