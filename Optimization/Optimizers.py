@@ -38,6 +38,6 @@ class Adam:
         #bais correction
         self.vkh = self.vk / (1 - np.power(self.momentum, self.iterations))
         self.rkh = self.rk / (1 - np.power(self.roh, self.iterations))
-        result = (weight_tensor - self.learningRate * self.vkh / np.sqrt(self.rkh))
+        result = (weight_tensor - self.learningRate * (self.vkh + 0.0001)/ (np.sqrt(self.rkh) + 0.0001))
         self.iterations += 1
         return result

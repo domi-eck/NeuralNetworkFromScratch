@@ -31,6 +31,7 @@ class Pooling:
         self.mask = np.zeros(input_tensor.shape)
         self.mask[:, :, 0:py, 0:px] += 1
 
+        count = 0
         for yy in np.arange(self.outputY):
             self.maskrolledY = np.roll(self.mask, dy * yy, 2)
             for xx in np.arange(self.outputX):
@@ -41,9 +42,21 @@ class Pooling:
                     for batch in np.arange(input_tensor.shape[0]):
                         max = np.amax(maskedInput[batch, channel])
                         output_tensor[batch, channel, yy, xx] = max
-                        i = np.where(input_tensor==max)
-                        self.Winner[batch, channel, yy, xx, 0] = i[2]
-                        self.Winner[batch, channel, yy, xx, 1] = i[3]
+                        i = np.where(maskedInput[batch, channel]==max)
+                        #print(i)
+                        #print(count)
+                        if(np.size(i) <= 2):
+                            if (np.size(i) == 0):
+                                dummy = 1
+
+                            self.Winner[batch, channel, yy, xx, 0] = i[0][0]
+                            self.Winner[batch, channel, yy, xx, 1] = i[1][0]
+
+                        else:
+                            self.Winner[batch, channel, yy, xx, 0] = i[0][0]
+                            self.Winner[batch, channel, yy, xx, 1] = i[0][1]
+
+                        count += 1
 
         return output_tensor
     def backward(self, error_tensor):
