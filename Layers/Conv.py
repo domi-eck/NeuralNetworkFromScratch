@@ -1,4 +1,5 @@
 import numpy as np
+import scipy.signal as signal
 import copy
 from Optimization import Optimizers
 
@@ -48,8 +49,10 @@ class Conv:
     def forward(self, input_tensor):
 
         # if 1D array, add one dimension
+        global correlation, correlation
         if np.size(input_tensor.shape) is 3:
             input_tensor = np.expand_dims(input_tensor, 3)
+            self.weights = np.expand_dims(self.weights, 3)
             self.stride_shape = np.array([*self.stride_shape, 1])
             self.conv_shape = np.array([*self.conv_shape, 1])
             self.reshape = True
@@ -99,7 +102,42 @@ class Conv:
         self.out_y = np.int(np.ceil(self.input_y_size / self.y_stride))
 
         self.output_tensor = np.zeros([self.batch_num, self.num_kernels, self.out_y, self.out_x])
+        correctChannel = np.int( np.floor((self.input_z_size-1)/2) )
+        for batch in np.arange(self.batch_num):
+            for kernel in np.arange(self.num_kernels):
+                if (kernel == 0):
+                    correlation = np.array([ (signal.correlate(input_tensor[batch], self.weights[kernel], "same"))[correctChannel]])
+                else:
+                    nextCorrelation = np.array([ (signal.correlate(input_tensor[batch], self.weights[kernel], "same"))[correctChannel]])
+                    correlation = np.concatenate([correlation, nextCorrelation], 0)
+            if(self.stride_shape[0] != 1):
+                keeper      = np.arange(0, self.input_y_size, self.y_stride)
+                all         = np.arange(0, self.input_y_size)
+                toBeRemoved = np.delete(all, keeper)
+                correlation = np.delete(correlation, toBeRemoved, 1)
+            if(self.stride_shape[1] != 1):
+                keeper      = np.arange(0, self.input_x_size, self.x_stride)
+                all         = np.arange(0, self.input_x_size)
+                toBeRemoved = np.delete(all, keeper)
+                correlation = np.delete(correlation, toBeRemoved, 2)
+            self.output_tensor[batch, kernel] += self.bias[kernel]
+            self.output_tensor[batch] = correlation
+        convolvedOutput = self.output_tensor
 
+        # If there is a One day array remove added dimension which was added in the beginning
+        if self.reshape is True:
+            self.output_tensor = np.reshape(self.output_tensor,
+                                            [self.output_tensor.shape[0], self.output_tensor.shape[1],
+                                             self.output_tensor.shape[2]])
+            self.reshape = False
+
+
+        return self.output_tensor
+
+
+############################################
+
+        self.output_tensor = np.zeros([self.batch_num, self.num_kernels, self.out_y, self.out_x])
 
         for batch in np.arange(input_tensor.shape[0]):
             '''Calculate Convolution for each kernel and each x and y dimension'''
@@ -127,6 +165,8 @@ class Conv:
                                             [self.output_tensor.shape[0], self.output_tensor.shape[1],
                                              self.output_tensor.shape[2]])
             self.reshape = False
+
+        diff = convolvedOutput - self.output_tensor
 
         return self.output_tensor
 
