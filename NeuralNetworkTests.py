@@ -793,7 +793,7 @@ class TestConvNet(unittest.TestCase):
         fcl_2 = FullyConnected.FullyConnected(np.int(fcl_1_input_size/2.), categories)
         net.append_trainable_layer(fcl_2)
 
-        net.train(200)
+        net.train(50)
 
         if TestConvNet.plot:
             description = 'on_digit_data'
