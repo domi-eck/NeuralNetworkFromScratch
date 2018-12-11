@@ -1,4 +1,5 @@
 import numpy as np
+import copy
 from Optimization import Optimizers
 
 
@@ -11,7 +12,7 @@ class Conv:
         self.weights        = np.array([])
         self.weights        = np.ones([num_kernels, *convulution_shape])
         self.reshape        = False
-        self.bias           = np.zeros(num_kernels)
+        self.bias           = np.ones(num_kernels)
         self.input_tensor   = []
 
         '''variables which are used for forward and backward'''
@@ -31,12 +32,14 @@ class Conv:
 
 
     def set_optimizer(self, optimizer):
-        self.optimizer = optimizer
+        self.optimizer = copy.deepcopy(optimizer)
+        self.biasOptimizer = copy.deepcopy(optimizer)
 
     def initialize(self, weights_initializer, bias_initializer):
         fan_in = np.product(self.weights[0].shape)
         fan_out = np.product([*self.weights[0][0].shape, self.num_kernels])
         self.weights = weights_initializer.initialize(self.weights.shape, fan_in, fan_out)
+        self.bias = bias_initializer.initialize(self.bias.shape, self.num_kernels, 1)
 
     def get_gradient_weights(self):
         return self.gradient_weights
@@ -112,18 +115,30 @@ class Conv:
                                               x:(x + self.conv_x_size)]
                         # make one convolution, first multiply with the weights and the sum over it to get one value
                         self.output_tensor[batch, kernel][y_out][x_out] = np.sum(
-                            np.multiply(tensor_for_multiply, self.weights[kernel])) + self.bias[kernel]
+                            np.multiply(tensor_for_multiply, self.weights[kernel]))
                         x_out += 1
                     y_out += 1
+
+                self.output_tensor[batch, kernel] += self.bias[kernel]
 
         # If there is a One day array remove added dimension which was added in the beginning
         if self.reshape is True:
             self.output_tensor = np.reshape(self.output_tensor,
                                             [self.output_tensor.shape[0], self.output_tensor.shape[1],
                                              self.output_tensor.shape[2]])
+            self.reshape = False
+
         return self.output_tensor
 
     def backward(self, backward_tensor):
+        # if 1D array, add one dimension
+        if np.size(backward_tensor.shape) is 3:
+            backward_tensor = np.expand_dims(backward_tensor, 3)
+            #self.stride_shape = np.array([*self.stride_shape, 1])
+            #self.conv_shape = np.array([*self.conv_shape, 1])
+            self.weights = np.expand_dims(self.weights, 3)
+            self.reshape = True
+
         '''Calculate gradient'''
         '''Calculate Convolution for each kernel and each x and y dimension'''
         # loop over every y value with the right stride size
@@ -159,18 +174,40 @@ class Conv:
         '''Update Kernels'''
         if hasattr(self, 'optimizer'):
             for kernel in np.arange(self.num_kernels):
-                self.weights[kernel] = self.optimizer.calculate_update(1, self.weights[kernel], self.gradient_weights[kernel])
-        # else:
-        #     for kernel in np.arange(self.num_kernels):
-        #         self.weights[kernel] -= self.learning_rate*self.gradient_weights[kernel]
+                self.weights[kernel] = self.optimizer.calculate_update(self.learning_rate, self.weights[kernel], self.gradient_weights[kernel])
+            biasGradien = np.zeros_like(self.bias)
+            for k in np.arange(backward_tensor.shape[1]):
+                biasGradien[k] = np.sum(backward_tensor[:, k, :, :])
+            self.bias = self.biasOptimizer.calculate_update(self.learning_rate, self.bias, biasGradien)
+        else:
+             for kernel in np.arange(self.num_kernels):
+                 self.weights[kernel] -= self.learning_rate*self.gradient_weights[kernel]
 
-        biasGradien = np.zeros_like(self.bias)
-        for k in np.arange(backward_tensor.shape[1]):
-            biasGradien[k] = np.sum(backward_tensor[:,k,:,:])
-        self.bias = biasGradien
+             self.biasGradien = np.zeros_like(self.bias)
+             for k in np.arange(backward_tensor.shape[1]):
+                 self.biasGradien[k] = np.sum(backward_tensor[:, k, :, :])
+             self.bias = self.bias - self.learning_rate*self.biasGradien
 
-        return self.error_tensor[:,:, self.num_y_left_zeros: y_end, self.num_x_left_zeros : x_end ]
+
+
+
+
+
+        if self.reshape is True:
+            self.error_tensor = self.error_tensor[:, :, self.num_y_left_zeros: y_end, self.num_x_left_zeros: x_end]
+
+            self.error_tensor = np.reshape(self.error_tensor,
+                                            [self.error_tensor.shape[0], self.error_tensor.shape[1],
+                                             self.error_tensor.shape[2]])
+            self.weights = np.reshape(self.weights,
+                                      [self.weights.shape[0], self.weights.shape[1], self.weights.shape[2]])
+
+            return self.error_tensor
+
+        else:
+            return self.error_tensor[:,:, self.num_y_left_zeros: y_end, self.num_x_left_zeros : x_end ]
 
     def get_gradient_bias(self):
-        return self.bias
+        return self.biasGradien
+
 
