@@ -1,4 +1,5 @@
 import numpy as np
+from Layers import Base
 from Optimization import Optimizers
 
 class FullyConnected:
@@ -7,7 +8,6 @@ class FullyConnected:
         self.output_size = output_size
         self.weights = np.random.rand(input_size +1, output_size)
         self.delta = dumm
-
     def set_optimizer(self, optimizer):
         self.optimizer = optimizer
 
