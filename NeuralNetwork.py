@@ -1,5 +1,12 @@
 import copy
 
+#TODO: refactor Refactor the Neural Network class to add the regularization loss to the data loss. Hint:
+#It will be necessary to refactor more classes to get the necessary information. Make use
+#of base-classes.
+
+#TODO: Add a method set phase(phase) to the NeuralNetwork class setting each layer's
+#phase. Use this method to set the phase in train and test.
+
 class NeuralNetwork:
     def __init__(self, optimizer, weights_initializer, bias_initializer):
         self.weights_initializer = weights_initializer

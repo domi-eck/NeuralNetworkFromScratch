@@ -777,6 +777,7 @@ class TestBatchNorm(unittest.TestCase):
 
         np.random.seed(0)
         self.input_tensor = np.abs(np.random.random((self.input_size, self.batch_size))).T
+        self.input_tensor_conv = np.abs(np.random.random((self.batch_size, *self.input_shape)))
 
         self.categories = 5
         self.label_tensor = np.zeros([self.categories, self.batch_size]).T
@@ -785,6 +786,7 @@ class TestBatchNorm(unittest.TestCase):
 
         self.layers = list()
         self.layers.append(None)
+        self.layers.append(Flatten.Flatten())
         self.layers.append(FullyConnected.FullyConnected(self.input_size, self.categories))
         self.layers.append(SoftMax.SoftMax())
 
@@ -792,10 +794,9 @@ class TestBatchNorm(unittest.TestCase):
 
     @staticmethod
     def _channel_moments(tensor, channels):
-        in_shape = tensor.shape
-        tensor = tensor.reshape(tensor.shape[0], channels, -1)
-        tensor = np.transpose(tensor, (0, 2, 1))
-        tensor = tensor.reshape(in_shape[1]//channels * in_shape[0], channels)
+
+        tensor = np.transpose(tensor, (0, *range(2, tensor.ndim), 1))
+        tensor = tensor.reshape(-1, channels)
         mean = np.mean(tensor, axis=0)
         var = np.var(tensor, axis=0)
         return mean, var
@@ -809,10 +810,9 @@ class TestBatchNorm(unittest.TestCase):
 
     def test_forward_shape_convolutional(self):
         layer = BatchNormalization.BatchNormalization(self.channels)
-        output = layer.forward(self.input_tensor)
+        output = layer.forward(self.input_tensor_conv)
 
-        self.assertEqual(output.shape[0], self.input_tensor.shape[0])
-        self.assertEqual(output.shape[1], self.input_tensor.shape[1])
+        self.assertEqual(output.shape, self.input_tensor_conv.shape)
 
     def test_forward(self):
         layer = BatchNormalization.BatchNormalization()
@@ -825,7 +825,7 @@ class TestBatchNorm(unittest.TestCase):
 
     def test_forward_convolutional(self):
         layer = BatchNormalization.BatchNormalization(self.channels)
-        output = layer.forward(self.input_tensor)
+        output = layer.forward(self.input_tensor_conv)
         mean, var = TestBatchNorm._channel_moments(output, self.channels)
 
         self.assertAlmostEqual(np.sum(np.square(mean)), 0)
@@ -846,12 +846,12 @@ class TestBatchNorm(unittest.TestCase):
 
     def test_forward_train_phase_convolutional(self):
         layer = BatchNormalization.BatchNormalization(self.channels)
-        layer.forward(self.input_tensor)
+        layer.forward(self.input_tensor_conv)
 
-        output = layer.forward((np.zeros_like(self.input_tensor)))
+        output = layer.forward((np.zeros_like(self.input_tensor_conv)))
 
         mean, var = TestBatchNorm._channel_moments(output, self.channels)
-        mean_input, var_input = TestBatchNorm._channel_moments(self.input_tensor, self.channels)
+        mean_input, var_input = TestBatchNorm._channel_moments(self.input_tensor_conv, self.channels)
 
         self.assertNotEqual(np.sum(np.square(mean + (mean_input/np.sqrt(var_input)))), 0)
 
@@ -873,13 +873,13 @@ class TestBatchNorm(unittest.TestCase):
 
     def test_forward_test_phase_convolutional(self):
         layer = BatchNormalization.BatchNormalization(self.channels)
-        layer.forward(self.input_tensor)
+        layer.forward(self.input_tensor_conv)
         layer.phase = Base.Phase.test
 
-        output = layer.forward((np.zeros_like(self.input_tensor)))
+        output = layer.forward((np.zeros_like(self.input_tensor_conv)))
 
         mean, var = TestBatchNorm._channel_moments(output, self.channels)
-        mean_input, var_input = TestBatchNorm._channel_moments(self.input_tensor, self.channels)
+        mean_input, var_input = TestBatchNorm._channel_moments(self.input_tensor_conv, self.channels)
 
         self.assertAlmostEqual(np.sum(np.square(mean + (mean_input / np.sqrt(var_input)))), 0)
         self.assertAlmostEqual(np.sum(np.square(var)), 0)
@@ -916,7 +916,7 @@ class TestBatchNorm(unittest.TestCase):
     def test_gradient_convolutional(self):
         self.layers[0] = BatchNormalization.BatchNormalization(self.channels)
 
-        difference = Helpers.gradient_check(self.layers, self.input_tensor, self.label_tensor)
+        difference = Helpers.gradient_check(self.layers, self.input_tensor_conv, self.label_tensor)
 
         description = 'Gradient_batch_norm_convolutional_inputs'
         #Helpers.plot_difference(self.plot, description, self.plot_shape, difference.reshape(self.plot_shape), self.directory)
@@ -924,9 +924,9 @@ class TestBatchNorm(unittest.TestCase):
 
     def test_gradient_weights_convolutional(self):
         self.layers[0] = BatchNormalization.BatchNormalization(self.channels)
-        self.layers[0].forward(self.input_tensor)
+        self.layers[0].forward(self.input_tensor_conv)
 
-        difference = Helpers.gradient_check_weights(self.layers, self.input_tensor, self.label_tensor, False)
+        difference = Helpers.gradient_check_weights(self.layers, self.input_tensor_conv, self.label_tensor, False)
 
         description = 'Gradient_batch_norm_convolutional_weights'
         #Helpers.plot_difference(self.plot, description, (2, 1), difference.reshape((2, 1)), self.directory)
@@ -934,9 +934,9 @@ class TestBatchNorm(unittest.TestCase):
 
     def test_gradient_bias_convolutional(self):
         self.layers[0] = BatchNormalization.BatchNormalization(self.channels)
-        self.layers[0].forward(self.input_tensor)
+        self.layers[0].forward(self.input_tensor_conv)
 
-        difference = Helpers.gradient_check_weights(self.layers, self.input_tensor, self.label_tensor, True)
+        difference = Helpers.gradient_check_weights(self.layers, self.input_tensor_conv, self.label_tensor, True)
 
         description = 'Gradient_batch_norm_convolutional_bias'
         #Helpers.plot_difference(self.plot, description, (2, 1), difference.reshape((2, 1)), self.directory)
@@ -1127,7 +1127,8 @@ class TestConvNet(unittest.TestCase):
     plot = False
     directory = 'plots/'
     log = 'log.txt'
-    iterations = 100
+    #TODO: set this to 100
+    iterations = 10
 
     def test_digit_data(self):
         adam = Optimizers.Adam(5e-3, 0.98, 0.999)
