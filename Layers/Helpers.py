@@ -69,7 +69,7 @@ def gradient_check_weights(layers, input_tensor, label_tensor, bias):
     else:
         weights = layers[0].weights
     difference = np.zeros_like(weights)
-
+    num = np.zeros_like(difference)
     it = np.nditer(weights, flags=['multi_index'])
     while not it.finished:
         plus_epsilon = weights.copy()
@@ -115,6 +115,7 @@ def gradient_check_weights(layers, input_tensor, label_tensor, bias):
         lower_error = layers[-1].forward(minus_epsilon_activation, label_tensor)
 
         numerical_derivative = (upper_error - lower_error) / (2 * epsilon)
+        num[it.multi_index] = numerical_derivative
         normalizing_constant = max(np.abs(analytical_derivative), np.abs(numerical_derivative))
 
         if normalizing_constant < 1e-15:
