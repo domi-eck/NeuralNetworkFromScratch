@@ -1,11 +1,9 @@
 import copy
-
+from Layers import  Base
 #TODO: refactor Refactor the Neural Network class to add the regularization loss to the data loss. Hint:
 #It will be necessary to refactor more classes to get the necessary information. Make use
 #of base-classes.
 
-#TODO: Add a method set phase(phase) to the NeuralNetwork class setting each layer's
-#phase. Use this method to set the phase in train and test.
 
 class NeuralNetwork:
     def __init__(self, optimizer, weights_initializer, bias_initializer):
@@ -17,6 +15,10 @@ class NeuralNetwork:
         self.loss_layer = []
         self._didForward = False
         self.optimizer = optimizer
+
+    def setPhase(self, phase):
+        for layer in self.layers:
+            layer.phase = phase
 
     def append_trainable_layer(self, layer):
         layer.set_optimizer(copy.deepcopy(self.optimizer))
@@ -33,6 +35,7 @@ class NeuralNetwork:
         self.loss.append( self.loss_layer.forward(nextInput, self._label_tensor) )
         self._didForward = True
         return self.loss[-1]
+
     def backward(self):
         if(self._didForward):
             nextErrorTensor = self.loss_layer.backward(self._label_tensor)
@@ -42,13 +45,17 @@ class NeuralNetwork:
                 i -= 1
             self._errorTensor = nextErrorTensor
             return  self._errorTensor
+
     def train(self, iterations):
         i = 0
+        self.setPhase(Base.Phase.train)
         while i < iterations:
             self.forward()
             self.backward()
             i += 1
+
     def test(self, input_tensor):
+        self.setPhase(Base.Phase.test)
         nextInput = self.layers[0].forward(input_tensor)
         i = 1
         while i < len(self.layers):

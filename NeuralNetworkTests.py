@@ -968,7 +968,7 @@ class TestNeuralNetwork(unittest.TestCase):
         out2 = net.forward()
 
         self.assertNotEqual(out, out2)
-
+#TODO is failing
     def test_iris_data(self):
         net = NeuralNetwork.NeuralNetwork(Optimizers.Sgd(1e-3),
                                           Initializers.UniformRandom(),
@@ -1088,7 +1088,7 @@ class TestNeuralNetwork(unittest.TestCase):
             print('On the Iris dataset using Batchnorm, we achieve an accuracy of: ' + str(accuracy * 100.) + '%', file=f)
         self.assertGreater(accuracy, 0.8)
         self.assertEqual(np.mean(np.square(results - results_next_run)), 0)
-
+#TODO is failing
     def test_iris_data_with_dropout(self):
         net = NeuralNetwork.NeuralNetwork(Optimizers.Adam(1e-2, 0.9, 0.999),
                                           Initializers.UniformRandom(),
@@ -1105,6 +1105,7 @@ class TestNeuralNetwork(unittest.TestCase):
         net.layers.append(Dropout.Dropout(0.3))
 
         net.train(2000)
+        TestNeuralNetwork.plot = False
         if TestNeuralNetwork.plot:
             fig = plt.figure('Loss function for a Neural Net on the Iris dataset using Dropout')
             plt.plot(net.loss, '-x')
@@ -1128,7 +1129,7 @@ class TestConvNet(unittest.TestCase):
     directory = 'plots/'
     log = 'log.txt'
     #TODO: set this to 100
-    iterations = 10
+    iterations = 100
 
     def test_digit_data(self):
         adam = Optimizers.Adam(5e-3, 0.98, 0.999)

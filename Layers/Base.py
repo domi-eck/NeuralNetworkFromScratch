@@ -7,4 +7,4 @@ class Phase(Enum):
 
 class Base:
     def __init__(self):
-        self.Phase = Phase.test
+        self.phase = Phase.test

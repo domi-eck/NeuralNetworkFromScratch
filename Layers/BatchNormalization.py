@@ -1,27 +1,43 @@
 import  numpy as np
+import copy
 import Layers.Base as Base
 
 class BatchNormalization(Base.Base):
-    def __init__(self, gamma = 1, beta = 0):
-        self.bias       = beta
-        self.weights    = gamma
-        self.phase      = Base.Phase.train
-        self.epsilon    = 0.0000000000000001
+    def __init__(self, channel = 0):
+        self.channels = channel
+        self.phase              = Base.Phase.train
+        self.epsilon            = 0.0000000000000001
+        self.hasBiasAndWeights  = False
+        self.shapeOfWeights     = []
+        self.shapeOfBias     = []
+        self.biasInit     = []
+        self.weightsInit     = []
+        self.needForInit = False
 
     def set_optimizer(self, optimizer):
-        self.optimizer = optimizer
+        self.optimizer = copy.deepcopy( optimizer )
 
     def forward(self, input_tensor):
-        self.bias               = np.zeros(input_tensor.shape[1])
-        self.weights            = np.ones(input_tensor.shape[1])
-        self.input_tensor       = input_tensor
-        IsConvInput = False
 
-        if input_tensor.ndim == 4:
+        self.input_tensor = input_tensor
+
+        if self.channels > 0:
             input_tensor        = np.transpose(input_tensor, (0, 3, 2, 1))
             shapeBevorReshaping = input_tensor.shape
-            input_tensor        = input_tensor.reshape(-1, input_tensor.shape[3])
-            IsConvInput = True
+            input_tensor        = input_tensor.reshape(-1, self.channels)
+
+        if self.hasBiasAndWeights == False:
+            self.hasBiasAndWeights  = True
+            self.bias               = np.zeros(input_tensor.shape[1])
+            self.shapeOfBias        = self.bias.shape
+            self.weights            = np.ones(input_tensor.shape[1])
+            self.shapeOfWeights     = self.weights.shape
+
+            if(self.needForInit):
+                self.weights    = self.weightsInitializer.initialize( self.weights.shape, input_tensor.shape[0], input_tensor.shape[0])
+                self.bias       = self.weightsInitializer.initialize( self.bias.shape, 1, input_tensor.shape[0])
+
+
 
         if self.phase == Base.Phase.train:
             #####
@@ -67,7 +83,7 @@ class BatchNormalization(Base.Base):
             self.forward_output = (input_tensor - self.mu) / (np.sqrt(self.var + self.epsilon))
             self.forward_output = self.forward_output * self.weights + self.bias
 
-        if IsConvInput == True:
+        if self.channels > 0:
             self.forward_output = self.forward_output.reshape(shapeBevorReshaping)
             self.forward_output = np.transpose(self.forward_output, (0,3,2,1))
 
@@ -151,7 +167,6 @@ class BatchNormalization(Base.Base):
         return self.dgamma
 
     def initialize(self, weights_initializer, bias_initializer):
-        self.weights = weights_initializer.initialize(np.array([self.input_size, self.output_size]), self.input_size,
-                                                      self.output_size)
-        self.bias = bias_initializer.initialize([1, self.output_size], 1, self.output_size)
-        self.weights = np.vstack([self.weights, self.bias])
+        self.weightsInitializer = weights_initializer
+        self.biasInitializer    = bias_initializer
+        self.needForInit        = True
