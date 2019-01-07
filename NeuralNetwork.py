@@ -26,6 +26,7 @@ class NeuralNetwork:
         self.layers.append(copy.deepcopy(layer))
 
     def forward(self):
+        #TODO: here add regularization loss
         self._input_tensor, self._label_tensor = self.data_layer.forward()
         nextInput = self.layers[0].forward(self._input_tensor)
         i = 1
