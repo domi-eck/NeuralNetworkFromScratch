@@ -1,5 +1,6 @@
 import copy
 from Layers import  Base
+import pickle
 #TODO: refactor Refactor the Neural Network class to add the regularization loss to the data loss. Hint:
 #It will be necessary to refactor more classes to get the necessary information. Make use
 #of base-classes.
@@ -72,7 +73,12 @@ class NeuralNetwork:
 
 #Exercise 3
 def save(filename, net):
-    dummy = 1
+    dataLayer = net.data_layer
+    net.data_layer = []
+    pickle.dump(net, open( filename , "wb" ) )
+    net.data_layer = dataLayer
 
 def load(filename, data_layer):
-    dummy = 1
+    net = pickle.load( open( filename, "rb" ) )
+    net.data_layer = data_layer
+    return net
