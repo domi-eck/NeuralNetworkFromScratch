@@ -31,6 +31,7 @@ class NeuralNetwork:
         nextInput = self.layers[0].forward(self._input_tensor)
         i = 1
         while i < len(self.layers):
+            #print(i)
             nextInput = self.layers[i].forward(nextInput)
             i += 1
         self.loss.append( self.loss_layer.forward(nextInput, self._label_tensor) )
@@ -42,7 +43,11 @@ class NeuralNetwork:
             nextErrorTensor = self.loss_layer.backward(self._label_tensor)
             i = -1
             while i >= -len(self.layers):
+                #print(i)
+                if i == -12:
+                    debug = 1
                 nextErrorTensor = self.layers[i].backward(nextErrorTensor)
+
                 i -= 1
             self._errorTensor = nextErrorTensor
             return  self._errorTensor
@@ -54,6 +59,7 @@ class NeuralNetwork:
             self.forward()
             self.backward()
             i += 1
+            print("Network loss: " +str( self.loss ))
 
     def test(self, input_tensor):
         self.setPhase(Base.Phase.test)
@@ -63,3 +69,10 @@ class NeuralNetwork:
             nextInput = self.layers[i].forward(nextInput)
             i += 1
         return self.loss_layer.predict(nextInput)
+
+#Exercise 3
+def save(filename, net):
+    dummy = 1
+
+def load(filename, data_layer):
+    dummy = 1

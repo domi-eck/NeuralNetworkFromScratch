@@ -23,6 +23,7 @@ class SgdWithMomentum (HasRegularizer):
         return weight_tensor + self.vkOld - constrain
 
 
+
 class Sgd (HasRegularizer):
     def __init__(self, lr=0.01):
         self.learningRate = lr

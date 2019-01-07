@@ -6,7 +6,7 @@ import os.path
 
 batch_size = 50
 mnist = Helpers.MNISTData(batch_size)
-mnist.show_random_training_image()
+#mnist.show_random_training_image()
 
 if os.path.isfile('trained/LeNet'):
     net = NeuralNetwork.load('trained/LeNet', mnist)
@@ -14,13 +14,13 @@ else:
     net = build()
     net.data_layer = mnist
 
-net.train(300)
+net.train(30)
 
 NeuralNetwork.save('trained/LeNet', net)
 
-plt.figure('Loss function for training LeNet on the MNIST dataset')
-plt.plot(net.loss, '-x')
-plt.show()
+#plt.figure('Loss function for training LeNet on the MNIST dataset')
+#plt.plot(net.loss, '-x')
+#plt.show()
 
 data, labels = net.data_layer.get_test_set()
 

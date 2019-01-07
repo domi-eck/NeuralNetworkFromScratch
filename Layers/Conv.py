@@ -46,7 +46,7 @@ class Conv:
 
 
     def forward(self, input_tensor):
-
+        print("hallo ich bims")
         # if 1D array, add one dimension
         if np.size(input_tensor.shape) is 3:
             input_tensor = np.expand_dims(input_tensor, 3)
@@ -159,7 +159,8 @@ class Conv:
                     for batch in np.arange(self.batch_num):
                         self.gradient_weights[kernel] += \
                             tensor_for_multiply[batch]*backward_tensor[batch, kernel][y_out][x_out]
-
+                        if(self.weights[kernel]*backward_tensor[batch, kernel][y_out][x_out]).shape != (self.error_tensor[batch][:, y: (y + self.conv_y_size), x:(x + self.conv_x_size)]).shape:
+                            dummy = 1
                         '''calc error tensor'''
                         self.error_tensor[batch][:, y: (y + self.conv_y_size), x:(x + self.conv_x_size)] \
                             += self.weights[kernel]*backward_tensor[batch, kernel][y_out][x_out]
