@@ -1,7 +1,6 @@
 import  numpy as np
 from Layers import Base
 
-#TODO:Refactor all layers using a base-class to contain an enum named Phase specifying train,test or validation phase.
 
 class Dropout(Base.Base):
     def __init__(self, probability):

@@ -14,7 +14,7 @@ else:
     net = build()
     net.data_layer = mnist
 
-net.train(30)
+net.train(1)
 
 NeuralNetwork.save('trained/LeNet', net)
 
