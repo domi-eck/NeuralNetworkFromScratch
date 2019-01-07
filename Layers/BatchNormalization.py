@@ -34,6 +34,7 @@ class BatchNormalization(Base.Base):
             self.shapeOfWeights     = self.weights.shape
 
             if(self.needForInit):
+                #TODO: vll verkehrte init fan_in fan_out
                 self.weights    = self.weightsInitializer.initialize( self.weights.shape, input_tensor.shape[0], input_tensor.shape[0])
                 self.bias       = self.weightsInitializer.initialize( self.bias.shape, 1, input_tensor.shape[0])
 
@@ -79,6 +80,7 @@ class BatchNormalization(Base.Base):
             #self.forward_output = self.forward_output * self.weights + self.bias
 
         if self.phase == Base.Phase.test:
+            #TODO: is this the online estimation of mu and var?
             self.forward_output = np.zeros_like(input_tensor)
             self.forward_output = (input_tensor - self.mu) / (np.sqrt(self.var + self.epsilon))
             self.forward_output = self.forward_output * self.weights + self.bias
