@@ -14,6 +14,7 @@ class BatchNormalization(Base.Base):
         self.weightsInit     = []
         self.needForInit = False
         self.hasOptimizer = False
+        self.firstIter = True
 
     def set_optimizer(self, optimizer):
         self.optimizer = copy.deepcopy( optimizer )
@@ -49,7 +50,10 @@ class BatchNormalization(Base.Base):
             N, D = input_tensor.shape
 
             # step1: calculate mean
-            self.mu = 1. / N * np.sum(input_tensor, axis=0)
+            if self.firstIter:
+                self.mu = 1. / N * np.sum(input_tensor, axis=0)
+            else:
+                self.mu = 0.9 * (1. / N * np.sum(input_tensor, axis=0)) + 0.1 * self.mu
 
             # step2: subtract mean vector of every trainings example
             self.xmu = input_tensor - self.mu
@@ -58,7 +62,11 @@ class BatchNormalization(Base.Base):
             sq = self.xmu ** 2
 
             # step4: calculate variance
-            self.var = 1. / N * np.sum(sq, axis=0)
+            if self.firstIter:
+                self.var = 1. / N * np.sum(sq, axis=0)
+            else:
+                self.firstIter = False
+                self.var = 0.9 * ( 1. / N * np.sum(sq, axis=0)) + 0.1 * self.var
 
             # step5: add eps for numerical stability, then sqrt
             self.sqrtvar = np.sqrt(self.var + self.epsilon)
