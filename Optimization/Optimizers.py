@@ -6,8 +6,6 @@ class HasRegularizer:
     def add_regularizer(self, regularizer):
         self.regularizer = regularizer
         self.hasRegularizer = True
-    def getLoss(self):
-        NotImplementedError
 
 class SgdWithMomentum (HasRegularizer):
     def __init__(self, lr=0.01, momentum=0.0):
@@ -25,10 +23,10 @@ class SgdWithMomentum (HasRegularizer):
             return weight_tensor + self.vkOld
         self.vkOld = self.vkOld * self.momentum - self.learningRate * gradient_tensor
         return weight_tensor + self.vkOld - constrain
-        def getLoss(self):
-            if self.hasRegularizer:
-                return np.sum( self.regularizer.norm(self.weights) )
-            return 0
+    def getLoss(self):
+        if self.hasRegularizer:
+            return np.sum( self.regularizer.norm(self.weights) )
+        return 0
 
 
 class Sgd (HasRegularizer):

@@ -14,7 +14,17 @@ else:
     net = build()
     net.data_layer = mnist
 
-net.train(5)
+i = 0
+while (i < 10):
+    i += 1
+    net.train(5)
+    data, labels = net.data_layer.get_test_set()
+    data = data[0:50]
+    labels = labels[0:50]
+    results = net.test(data)
+
+    accuracy = Helpers.calculate_accuracy(results, labels)
+    print('\nOn the MNIST dataset, we achieve an accuracy of: ' + str(accuracy * 100) + '%')
 
 NeuralNetwork.save('trained/LeNet_alex_300epo_vielDropout', net)
 
