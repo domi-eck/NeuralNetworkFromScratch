@@ -8,17 +8,17 @@ batch_size = 50
 mnist = Helpers.MNISTData(batch_size)
 #mnist.show_random_training_image()
 
-if os.path.isfile('trained/LeNet'):
-    net = NeuralNetwork.load('trained/LeNet', mnist)
+if os.path.isfile('trained/LeNet_alex_300epo_vielDropout'):
+    net = NeuralNetwork.load('trained/LeNet_alex_300epo_vielDropout', mnist)
 else:
     net = build()
     net.data_layer = mnist
 
-net.train(10)
+net.train(5)
 
-NeuralNetwork.save('trained/LeNet', net)
+NeuralNetwork.save('trained/LeNet_alex_300epo_vielDropout', net)
 
-#plt.figure('Loss function for training LeNet on the MNIST dataset')
+#plt.figure('Loss function for training LeNet_alex_300epo_vielDropout on the MNIST dataset')
 #plt.plot(net.loss, '-x')
 #plt.show()
 
