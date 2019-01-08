@@ -6,8 +6,6 @@ class HasRegularizer:
     def add_regularizer(self, regularizer):
         self.regularizer = regularizer
         self.hasRegularizer = True
-    def getLoss(self):
-        raise NotImplementedError
 
 class SgdWithMomentum (HasRegularizer):
     def __init__(self, lr=0.01, momentum=0.0):
@@ -27,18 +25,24 @@ class SgdWithMomentum (HasRegularizer):
         return weight_tensor + self.vkOld - constrain
     def getLoss(self):
         if self.hasRegularizer:
-            return np.sum( self.weights * self.alpha )
+            return np.sum( self.regularizer.norm(self.weights) )
         return 0
+
 
 class Sgd (HasRegularizer):
     def __init__(self, lr=0.01):
         self.learningRate = lr
         HasRegularizer.__init__(self)
     def calculate_update(self, individual_delta, weight_tensor, gradient_tensor):
+        self.weights = weight_tensor
         constrain = 0
         if(self.hasRegularizer):
             constrain = self.regularizer.calculate(weight_tensor) * self.learningRate * individual_delta
         return weight_tensor - individual_delta *  self.learningRate * gradient_tensor - constrain
+    def getLoss(self):
+        if self.hasRegularizer:
+            return np.sum( self.regularizer.norm(self.weights) )
+        return 0
 
 class Adam (HasRegularizer):
     def __init__(self, lr=0.01, momentum=0.0, roh=0.0):
@@ -46,6 +50,7 @@ class Adam (HasRegularizer):
         self.momentum = momentum
         self.roh = roh
         self.iterations = 1
+        self.weights = []
         HasRegularizer.__init__(self)
     def calculate_update(self, individual_delta, weight_tensor, gradient_tensor):
         constrain = 0
@@ -63,5 +68,10 @@ class Adam (HasRegularizer):
         self.rkh = self.rk / (1 - np.power(self.roh, self.iterations))
         result = (weight_tensor - self.learningRate * (self.vkh + 0.0001)/ (np.sqrt(self.rkh) + 0.0001))
         self.iterations += 1
+        self.weights = result - constrain
         return result - constrain
+    def getLoss(self):
+        if self.hasRegularizer:
+            return np.sum( self.regularizer.norm(self.weights) )
+        return 0
 

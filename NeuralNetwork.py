@@ -12,6 +12,7 @@ class NeuralNetwork:
         self.bias_initializer = bias_initializer
         self.loss = list()
         self.layers = list()
+        self.trainableLayers = list()
         self.data_layer = []
         self.loss_layer = []
         self._didForward = False
@@ -25,6 +26,7 @@ class NeuralNetwork:
         layer.set_optimizer(copy.deepcopy(self.optimizer))
         layer.initialize(self.weights_initializer, self.bias_initializer)
         self.layers.append(copy.deepcopy(layer))
+        self.trainableLayers.append(layer)
 
     def forward(self):
         #TODO: here add regularization loss
@@ -35,7 +37,12 @@ class NeuralNetwork:
             #print(i)
             nextInput = self.layers[i].forward(nextInput)
             i += 1
-        self.loss.append( self.loss_layer.forward(nextInput, self._label_tensor) )
+        loss = self.loss_layer.forward(nextInput, self._label_tensor)
+        i = 0
+        while i < len(self.trainableLayers):
+            loss += self.trainableLayers[i].getLoss()
+            i += 1
+        self.loss.append( loss )
         self._didForward = True
         return self.loss[-1]
 
@@ -60,7 +67,9 @@ class NeuralNetwork:
             self.forward()
             self.backward()
             i += 1
-            print("Network loss: " +str( self.loss[-1]) + "Epoch: " +str(len(self.loss)) )
+
+            print("Epoch " + str(len( self.loss )) +" Network loss: " +str( self.loss[-1] ))
+
 
     def test(self, input_tensor):
         self.setPhase(Base.Phase.test)

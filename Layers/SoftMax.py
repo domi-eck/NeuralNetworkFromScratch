@@ -19,7 +19,9 @@ class SoftMax:
 
     def predict(self, input_tensor):
         a = np.exp(input_tensor)
-        row_sum = 1 / (np.sum(a, 1))
+
+        row_sum = 1 / (np.sum(a, 1) )
+
         row_sum = np.diag(row_sum)
         return np.dot(row_sum, a)
 

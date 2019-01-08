@@ -8,23 +8,37 @@ batch_size = 50
 mnist = Helpers.MNISTData(batch_size)
 #mnist.show_random_training_image()
 
-if os.path.isfile('trained/LeNet'):
-    net = NeuralNetwork.load('trained/LeNet', mnist)
+if os.path.isfile('trained/LeNet_Test'):
+    net = NeuralNetwork.load('trained/LeNet_Test', mnist)
 else:
     net = build()
     net.data_layer = mnist
 
-net.train(10)
 
-NeuralNetwork.save('trained/LeNet', net)
+i = 0
+while (i < 10):
+    i += 1
+    net.train(5)
+    data, labels = net.data_layer.get_test_set()
+    data = data[0:50]
+    labels = labels[0:50]
+    results = net.test(data)
 
-#plt.figure('Loss function for training LeNet on the MNIST dataset')
+
+    accuracy = Helpers.calculate_accuracy(results, labels)
+    print('\nOn the MNIST dataset, we achieve an accuracy of: ' + str(accuracy * 100) + '%')
+
+NeuralNetwork.save('trained/LeNet_Test', net)
+
+#plt.figure('Loss function for training LeNet_alex_300epo_vielDropout on the MNIST dataset')
 #plt.plot(net.loss, '-x')
 #plt.show()
 
 data, labels = net.data_layer.get_test_set()
 
-results = net.test(data[0:200])
+data = data [0:50]
+labels = labels [0:50]
+results = net.test(data)
 
 accuracy = Helpers.calculate_accuracy(results, labels)
 print('\nOn the MNIST dataset, we achieve an accuracy of: ' + str(accuracy * 100) + '%')

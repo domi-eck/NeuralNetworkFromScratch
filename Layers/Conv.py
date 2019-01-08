@@ -1,5 +1,6 @@
 import numpy as np
 import copy
+from Layers import  Base
 from Optimization import Optimizers
 
 
@@ -29,11 +30,21 @@ class Conv:
         self.padded_input_tensor = []
         self.out_x = 0
         self.out_y = 0
+        self.hasOptimizer = False
 
 
     def set_optimizer(self, optimizer):
+        self.hasOptimizer = True
         self.optimizer = copy.deepcopy(optimizer)
         self.biasOptimizer = copy.deepcopy(optimizer)
+
+
+    def getLoss(self):
+        if self.hasOptimizer:
+            loss = self.optimizer.getLoss()
+            loss += self.biasOptimizer.getLoss()
+            return loss
+        return 0
 
     def initialize(self, weights_initializer, bias_initializer):
         fan_in = np.product(self.weights[0].shape)
