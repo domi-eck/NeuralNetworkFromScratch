@@ -12,12 +12,10 @@ def build():
     network.append_trainable_layer(BatchNormalization.BatchNormalization(1))
     network.append_trainable_layer(Conv.Conv([1,1],[1,5,5],6))
     network.layers.append(ReLU.ReLU())
-    network.layers.append(Dropout.Dropout(0.7))
     network.layers.append(Pooling.Pooling([2,2],[2,2]))
     network.append_trainable_layer(BatchNormalization.BatchNormalization(6))
     network.append_trainable_layer(Conv.Conv([1,1],[6,5,5],16))
     network.layers.append(ReLU.ReLU())
-    network.layers.append(Dropout.Dropout(0.8))
     network.layers.append(Pooling.Pooling([2,2],[2,2]))
     network.layers.append(Flatten.Flatten())
     network.append_trainable_layer(BatchNormalization.BatchNormalization())
@@ -29,5 +27,6 @@ def build():
     network.append_trainable_layer(BatchNormalization.BatchNormalization())
     network.append_trainable_layer(FullyConnected.FullyConnected(84, 10))
     network.layers.append(ReLU.ReLU())
+    network.append_trainable_layer(BatchNormalization.BatchNormalization())
     return network
 

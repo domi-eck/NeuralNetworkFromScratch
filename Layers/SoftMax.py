@@ -18,10 +18,10 @@ class SoftMax:
         return  np.where(label_tensor == 1, self.y_h - 1, self.y_h)
 
     def predict(self, input_tensor):
-        a = np.exp(input_tensor)
-
-        row_sum = 1 / (np.sum(a, 1) )
-
-        row_sum = np.diag(row_sum)
-        return np.dot(row_sum, a)
+        p = np.array(input_tensor)
+        a = np.array(input_tensor)
+        for i in np.arange(input_tensor.shape[0]):
+            a[i] = np.exp(input_tensor[i] - np.max(input_tensor[i]))
+            p[i] = a[i]/np.sum(a[i])
+        return p
 

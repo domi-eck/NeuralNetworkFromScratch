@@ -18,7 +18,7 @@ else:
 i = 0
 while (i < 10):
     i += 1
-    net.train(5)
+    net.train(6)
     data, labels = net.data_layer.get_test_set()
     data = data[0:50]
     labels = labels[0:50]
@@ -36,8 +36,8 @@ NeuralNetwork.save('trained/LeNet_Test', net)
 
 data, labels = net.data_layer.get_test_set()
 
-data = data [0:50]
-labels = labels [0:50]
+data = data [0:500]
+labels = labels [0:500]
 results = net.test(data)
 
 accuracy = Helpers.calculate_accuracy(results, labels)
