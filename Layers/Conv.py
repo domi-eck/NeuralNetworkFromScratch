@@ -46,7 +46,6 @@ class Conv:
 
 
     def forward(self, input_tensor):
-        print("hallo ich bims")
         # if 1D array, add one dimension
         if np.size(input_tensor.shape) is 3:
             input_tensor = np.expand_dims(input_tensor, 3)

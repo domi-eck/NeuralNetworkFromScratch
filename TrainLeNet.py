@@ -14,7 +14,7 @@ else:
     net = build()
     net.data_layer = mnist
 
-net.train(1)
+net.train(10)
 
 NeuralNetwork.save('trained/LeNet', net)
 
@@ -24,7 +24,7 @@ NeuralNetwork.save('trained/LeNet', net)
 
 data, labels = net.data_layer.get_test_set()
 
-results = net.test(data)
+results = net.test(data[0:200])
 
 accuracy = Helpers.calculate_accuracy(results, labels)
 print('\nOn the MNIST dataset, we achieve an accuracy of: ' + str(accuracy * 100) + '%')

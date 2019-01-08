@@ -10,10 +10,7 @@ class L2_Regularizer:
         return weights * self.alpha
     def norm(self, weights):
         #TODO: alphas after the norm?
-        a = weights * self.alpha
-        square = np.square(a)
-        norm = np.sum(square)
-        norm = np.sqrt(norm)
+        norm = np.squrt(np.sum(np.square(weights)))*self.alpha
         return norm
 
 #TODO: sign not used???
@@ -23,7 +20,7 @@ class L1_Regularizer:
         self.alpha = alpha
     def calculate(self, weights):
         #perform subgradient update of weights
-        return weights * self.alpha
+        return (weights) * self.alpha
     def norm(self, weights):
         a = weights * self.alpha
         absoluts = np.absolute(a)

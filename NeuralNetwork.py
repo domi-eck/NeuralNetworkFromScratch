@@ -60,7 +60,7 @@ class NeuralNetwork:
             self.forward()
             self.backward()
             i += 1
-            print("Network loss: " +str( self.loss ))
+            print("Network loss: " +str( self.loss[-1]) + "Epoch: " +str(len(self.loss)) )
 
     def test(self, input_tensor):
         self.setPhase(Base.Phase.test)
