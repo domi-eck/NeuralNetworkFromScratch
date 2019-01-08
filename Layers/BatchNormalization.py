@@ -13,9 +13,16 @@ class BatchNormalization(Base.Base):
         self.biasInit     = []
         self.weightsInit     = []
         self.needForInit = False
+        self.hasOptimizer = False
 
     def set_optimizer(self, optimizer):
         self.optimizer = copy.deepcopy( optimizer )
+        self.hasOptimizer = True
+
+    def getLoss(self):
+        if self.hasOptimizer:
+            return self.optimizer.getLoss()
+        return 0
 
     def forward(self, input_tensor):
 
@@ -33,10 +40,6 @@ class BatchNormalization(Base.Base):
             self.weights            = np.ones(input_tensor.shape[1])
             self.shapeOfWeights     = self.weights.shape
 
-            if(self.needForInit):
-                #TODO: vll verkehrte init fan_in fan_out
-                self.weights    = self.weightsInitializer.initialize( self.weights.shape, input_tensor.shape[0], input_tensor.shape[0])
-                self.bias       = self.weightsInitializer.initialize( self.bias.shape, 1, input_tensor.shape[0])
 
 
 

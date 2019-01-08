@@ -14,7 +14,7 @@ else:
     net = build()
     net.data_layer = mnist
 
-net.train(1)
+net.train(10)
 
 NeuralNetwork.save('trained/LeNet', net)
 
@@ -23,7 +23,8 @@ NeuralNetwork.save('trained/LeNet', net)
 #plt.show()
 
 data, labels = net.data_layer.get_test_set()
-
+data = data [0:50]
+labels = labels [0:50]
 results = net.test(data)
 
 accuracy = Helpers.calculate_accuracy(results, labels)

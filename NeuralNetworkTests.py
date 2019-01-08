@@ -1129,7 +1129,7 @@ class TestConvNet(unittest.TestCase):
     directory = 'plots/'
     log = 'log.txt'
 
-    iterations = 100
+    iterations = 40
 
     def test_digit_data(self):
         adam = Optimizers.Adam(5e-3, 0.98, 0.999)

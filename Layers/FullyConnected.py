@@ -9,8 +9,15 @@ class FullyConnected(Base.Base):
         self.output_size = output_size
         self.weights = np.random.rand(input_size +1, output_size)
         self.delta = delta
+        self.hasOptimizer = False
     def set_optimizer(self, optimizer):
         self.optimizer = optimizer
+        self.hasOptimizer = True
+
+    def getLoss(self):
+        if self.hasOptimizer:
+            return self.optimizer.getLoss()
+        return 0
 
     def forward(self, input_tensor):
         b = np.ones([np.size(input_tensor, 0), 1])
