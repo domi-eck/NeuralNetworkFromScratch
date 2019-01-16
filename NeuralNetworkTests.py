@@ -109,6 +109,82 @@ class TestReLU(unittest.TestCase):
         self.assertLessEqual(np.sum(difference), 1e-5)
 
 
+class TestTanH(unittest.TestCase):
+    def setUp(self):
+        self.input_size = 5
+        self.batch_size = 10
+        self.half_batch_size = int(self.batch_size / 2)
+        self.input_tensor = np.abs(np.random.random((self.input_size, self.batch_size))).T
+        self.input_tensor *= 2.
+        self.input_tensor -= 1.
+
+        self.label_tensor = np.zeros([self.input_size, self.batch_size]).T
+        for i in range(self.batch_size):
+            self.label_tensor[i, np.random.randint(0, self.input_size)] = 1
+
+    def test_forward(self):
+        expected_tensor = 1 - 2 / (np.exp(2*self.input_tensor) + 1)
+
+        layer = TanH.TanH()
+        output_tensor = layer.forward(self.input_tensor)
+        self.assertAlmostEqual(np.sum(np.power(output_tensor-expected_tensor, 2)), 0)
+
+    def test_range(self):
+        layer = TanH.TanH()
+        output_tensor = layer.forward(self.input_tensor*2)
+
+        out_max = np.max(output_tensor)
+        out_min = np.min(output_tensor)
+
+        self.assertLessEqual(out_max, 1.)
+        self.assertGreaterEqual(out_min, -1.)
+
+    def test_gradient(self):
+        layers = list()
+        layers.append(TanH.TanH())
+        layers.append(SoftMax.SoftMax())
+        difference = Helpers.gradient_check(layers, self.input_tensor, self.label_tensor)
+        self.assertLessEqual(np.sum(difference), 1e-5)
+
+
+class TestSigmoid(unittest.TestCase):
+    def setUp(self):
+        self.input_size = 5
+        self.batch_size = 10
+        self.half_batch_size = int(self.batch_size / 2)
+        self.input_tensor = np.abs(np.random.random((self.input_size, self.batch_size))).T
+        self.input_tensor *= 2.
+        self.input_tensor -= 1.
+
+        self.label_tensor = np.zeros([self.input_size, self.batch_size]).T
+        for i in range(self.batch_size):
+            self.label_tensor[i, np.random.randint(0, self.input_size)] = 1
+
+    def test_forward(self):
+        expected_tensor = 0.5 * (1. + np.tanh(self.input_tensor / 2.))
+
+        layer = Sigmoid.Sigmoid()
+        output_tensor = layer.forward(self.input_tensor)
+        self.assertAlmostEqual(np.sum(np.power(output_tensor-expected_tensor, 2)), 0)
+
+    def test_range(self):
+        layer = Sigmoid.Sigmoid()
+        output_tensor = layer.forward(self.input_tensor*2)
+
+        out_max = np.max(output_tensor)
+        out_min = np.min(output_tensor)
+
+        self.assertLessEqual(out_max, 1.)
+        self.assertGreaterEqual(out_min, 0.)
+
+    def test_gradient(self):
+        layers = list()
+        layers.append(Sigmoid.Sigmoid())
+        layers.append(SoftMax.SoftMax())
+        difference = Helpers.gradient_check(layers, self.input_tensor, self.label_tensor)
+        self.assertLessEqual(np.sum(difference), 1e-5)
+
+
 class TestSoftMax(unittest.TestCase):
 
     def setUp(self):
@@ -890,7 +966,7 @@ class TestBatchNorm(unittest.TestCase):
         difference = Helpers.gradient_check(self.layers, self.input_tensor, self.label_tensor)
 
         description = 'Gradient_batch_norm_inputs'
-        Helpers.plot_difference(self.plot, description, self.plot_shape, difference, self.directory)
+        #Helpers.plot_difference(self.plot, description, self.plot_shape, difference, self.directory)
         self.assertLessEqual(np.sum(difference), 1e-4)
 
     def test_gradient_weights(self):
@@ -900,7 +976,7 @@ class TestBatchNorm(unittest.TestCase):
         difference = Helpers.gradient_check_weights(self.layers, self.input_tensor, self.label_tensor, False)
 
         description = 'Gradient_batch_norm_weights'
-        Helpers.plot_difference(self.plot, description, (np.prod(self.input_shape[1:]), self.channels), difference.reshape(1, (np.prod(self.input_shape))), self.directory)
+        #Helpers.plot_difference(self.plot, description, (np.prod(self.input_shape[:-1]), self.channels), difference.reshape((np.prod(self.input_shape), 1)), self.directory)
         self.assertLessEqual(np.sum(difference), 1e-6)
 
     def test_gradient_bias(self):
@@ -910,7 +986,7 @@ class TestBatchNorm(unittest.TestCase):
         difference = Helpers.gradient_check_weights(self.layers, self.input_tensor, self.label_tensor, True)
 
         description = 'Gradient_batch_norm_bias'
-        Helpers.plot_difference(self.plot, description, (np.prod(self.input_shape[1:]), self.channels), difference.reshape(1, (np.prod(self.input_shape))), self.directory)
+        #Helpers.plot_difference(self.plot, description, (np.prod(self.input_shape[:-1]), self.channels), difference.reshape((np.prod(self.input_shape), 1)), self.directory)
         self.assertLessEqual(np.sum(difference), 1e-6)
 
     def test_gradient_convolutional(self):
@@ -919,7 +995,7 @@ class TestBatchNorm(unittest.TestCase):
         difference = Helpers.gradient_check(self.layers, self.input_tensor_conv, self.label_tensor)
 
         description = 'Gradient_batch_norm_convolutional_inputs'
-        #Helpers.plot_difference(self.plot, description, self.plot_shape, difference.reshape(self.plot_shape), self.directory)
+        #Helpers.plot_difference(self.plot, description, self.plot_shape, difference, self.directory)
         self.assertLessEqual(np.sum(difference), 1e-3)
 
     def test_gradient_weights_convolutional(self):
@@ -941,6 +1017,169 @@ class TestBatchNorm(unittest.TestCase):
         description = 'Gradient_batch_norm_convolutional_bias'
         #Helpers.plot_difference(self.plot, description, (2, 1), difference.reshape((2, 1)), self.directory)
         self.assertLessEqual(np.sum(difference), 1e-6)
+
+class TestRNN(unittest.TestCase):
+    def setUp(self):
+        self.batch_size = 9
+        self.input_size = 13
+        self.output_size = 5
+        self.hidden_size = 7
+        self.input_tensor = np.random.rand(self.input_size, self.batch_size).T
+
+        self.categories = 4
+        self.label_tensor = np.zeros([self.categories, self.batch_size]).T
+        for i in range(self.batch_size):
+            self.label_tensor[i, np.random.randint(0, self.categories)] = 1
+
+    def test_forward_size(self):
+        layer = RNN.RNN(self.input_size, self.hidden_size, self.output_size, self.batch_size)
+        output_tensor = layer.forward(self.input_tensor)
+        self.assertEqual(output_tensor.shape[1], self.output_size)
+        self.assertEqual(output_tensor.shape[0], self.batch_size)
+
+    def test_forward_stateful(self):
+        layer = RNN.RNN(self.input_size, self.hidden_size, self.output_size, self.batch_size)
+
+        input_vector = np.random.rand(self.input_size, 1).T
+        input_tensor = np.tile(input_vector, (2, 1))
+
+        output_tensor = layer.forward(input_tensor)
+
+        self.assertNotEqual(np.sum(np.square(output_tensor[0, :] - output_tensor[1, :])), 0)
+
+    def test_forward_stateful_TBPTT(self):
+        layer = RNN.RNN(self.input_size, self.hidden_size, self.output_size, self.batch_size)
+        layer.toggle_memory()
+        output_tensor_first = layer.forward(self.input_tensor)
+        output_tensor_second = layer.forward(self.input_tensor)
+        self.assertNotEqual(np.sum(np.square(output_tensor_first - output_tensor_second)), 0)
+
+    def test_backward_size(self):
+        layer = RNN.RNN(self.input_size, self.hidden_size, self.output_size, self.batch_size)
+        output_tensor = layer.forward(self.input_tensor)
+        error_tensor = layer.backward(output_tensor)
+        self.assertEqual(error_tensor.shape[1], self.input_size)
+        self.assertEqual(error_tensor.shape[0], self.batch_size)
+
+    def test_update(self):
+        layer = RNN.RNN(self.input_size, self.hidden_size, self.output_size, self.batch_size)
+        layer.delta = 0.1
+        layer.set_optimizer(Optimizers.Sgd(1))
+        for _ in range(10):
+            output_tensor = layer.forward(self.input_tensor)
+            error_tensor = np.zeros([self.output_size, self.batch_size]).T
+            error_tensor -= output_tensor
+            layer.backward(error_tensor)
+            new_output_tensor = layer.forward(self.input_tensor)
+            self.assertLess(np.sum(np.power(output_tensor, 2)), np.sum(np.power(new_output_tensor, 2)))
+
+    def test_gradient(self):
+        input_tensor = np.abs(np.random.random((self.input_size, self.batch_size))).T
+        layers = list()
+        layer = RNN.RNN(self.input_size, self.hidden_size, self.categories, self.batch_size)
+        layer.initialize(Initializers.He(), Initializers.He())
+        layers.append(layer)
+        layers.append(SoftMax.SoftMax())
+        difference = Helpers.gradient_check(layers, input_tensor, self.label_tensor)
+        self.assertLessEqual(np.sum(difference), 1e-4)
+
+    def test_gradient_weights(self):
+        input_tensor = np.abs(np.random.random((self.input_size, self.batch_size))).T
+        layers = list()
+        layer = RNN.RNN(self.input_size, self.hidden_size, self.categories, self.batch_size)
+        layer.initialize(Initializers.He(), Initializers.He())
+        layers.append(layer)
+        layers.append(SoftMax.SoftMax())
+        difference = Helpers.gradient_check_weights(layers, input_tensor, self.label_tensor, False)
+        self.assertLessEqual(np.sum(difference), 1e-4)
+
+    def test_bias(self):
+        input_tensor = np.zeros((1, 100000))
+        layer = RNN.RNN(100000, 100, 1, self.batch_size)
+        result = layer.forward(input_tensor)
+        self.assertGreater(np.sum(result), 0)
+
+
+class TestLSTM(unittest.TestCase):
+    def setUp(self):
+        self.batch_size = 9
+        self.input_size = 13
+        self.output_size = 5
+        self.hidden_size = 7
+        self.input_tensor = np.random.rand(self.input_size, self.batch_size).T
+
+        self.categories = 4
+        self.label_tensor = np.zeros([self.categories, self.batch_size]).T
+        for i in range(self.batch_size):
+            self.label_tensor[i, np.random.randint(0, self.categories)] = 1
+
+    def test_forward_size(self):
+        layer = LSTM.LSTM(self.input_size, self.hidden_size, self.output_size, self.batch_size)
+        output_tensor = layer.forward(self.input_tensor)
+        self.assertEqual(output_tensor.shape[1], self.output_size)
+        self.assertEqual(output_tensor.shape[0], self.batch_size)
+
+    def test_forward_stateful(self):
+        layer = LSTM.LSTM(self.input_size, self.hidden_size, self.output_size, self.batch_size)
+
+        input_vector = np.random.rand(1, self.input_size)
+        input_tensor = np.tile(input_vector, (2, 1))
+
+        output_tensor = layer.forward(input_tensor)
+
+        self.assertNotEqual(np.sum(np.square(output_tensor[0, :] - output_tensor[1, :])), 0)
+
+    def test_forward_stateful_TBPTT(self):
+        layer = LSTM.LSTM(self.input_size, self.hidden_size, self.output_size, self.batch_size)
+        layer.toggle_memory()
+        output_tensor_first = layer.forward(self.input_tensor)
+        output_tensor_second = layer.forward(self.input_tensor)
+        self.assertNotEqual(np.sum(np.square(output_tensor_first - output_tensor_second)), 0)
+
+    def test_backward_size(self):
+        layer = LSTM.LSTM(self.input_size, self.hidden_size, self.output_size, self.batch_size)
+        output_tensor = layer.forward(self.input_tensor)
+        error_tensor = layer.backward(output_tensor)
+        self.assertEqual(error_tensor.shape[1], self.input_size)
+        self.assertEqual(error_tensor.shape[0], self.batch_size)
+
+    def test_update(self):
+        layer = LSTM.LSTM(self.input_size, self.hidden_size, self.output_size, self.batch_size)
+        layer.delta = 0.1
+        layer.set_optimizer(Optimizers.Sgd(1))
+        for _ in range(10):
+            output_tensor = layer.forward(self.input_tensor)
+            error_tensor = np.zeros([self.output_size, self.batch_size]).T
+            error_tensor -= output_tensor
+            layer.backward(error_tensor)
+            new_output_tensor = layer.forward(self.input_tensor)
+            self.assertLess(np.sum(np.power(output_tensor, 2)), np.sum(np.power(new_output_tensor, 2)))
+
+    def test_gradient(self):
+        input_tensor = np.abs(np.random.random((self.input_size, self.batch_size))).T
+        layers = list()
+        layer = LSTM.LSTM(self.input_size, self.hidden_size, self.categories, self.batch_size)
+        layer.initialize(Initializers.He(), Initializers.He())
+        layers.append(layer)
+        layers.append(SoftMax.SoftMax())
+        difference = Helpers.gradient_check(layers, input_tensor, self.label_tensor)
+        self.assertLessEqual(np.sum(difference), 1e-4)
+
+    def test_gradient_weights(self):
+        input_tensor = np.abs(np.random.random((self.input_size, self.batch_size))).T
+        layers = list()
+        layer = LSTM.LSTM(self.input_size, self.hidden_size, self.categories, self.batch_size)
+        layer.initialize(Initializers.He(), Initializers.He())
+        layers.append(layer)
+        layers.append(SoftMax.SoftMax())
+        difference = Helpers.gradient_check_weights(layers, input_tensor, self.label_tensor, False)
+        self.assertLessEqual(np.sum(difference), 1e-3)
+
+    def test_bias(self):
+        input_tensor = np.zeros((1, 100000))
+        layer = LSTM.LSTM(100000, 100, 1, self.batch_size)
+        result = layer.forward(input_tensor)
+        self.assertGreater(np.sum(result), 0)
 
 
 class TestNeuralNetwork(unittest.TestCase):
@@ -1105,7 +1344,6 @@ class TestNeuralNetwork(unittest.TestCase):
         net.layers.append(Dropout.Dropout(0.3))
 
         net.train(2000)
-        TestNeuralNetwork.plot = False
         if TestNeuralNetwork.plot:
             fig = plt.figure('Loss function for a Neural Net on the Iris dataset using Dropout')
             plt.plot(net.loss, '-x')
@@ -1128,8 +1366,7 @@ class TestConvNet(unittest.TestCase):
     plot = False
     directory = 'plots/'
     log = 'log.txt'
-
-    iterations = 35
+    iterations = 100
 
     def test_digit_data(self):
         adam = Optimizers.Adam(5e-3, 0.98, 0.999)
@@ -1178,7 +1415,7 @@ class TestConvNet(unittest.TestCase):
 
         cl_1 = Conv.Conv(conv_stride_shape, convolution_shape, num_kernels)
         net.append_trainable_layer(cl_1)
-        cl_1_output_shape = (*input_image_shape[1:], num_kernels)
+        cl_1_output_shape = (num_kernels, *input_image_shape[1:])
 
         if batch_norm:
             net.append_trainable_layer(BatchNormalization.BatchNormalization(num_kernels))

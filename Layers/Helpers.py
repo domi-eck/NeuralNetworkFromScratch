@@ -67,9 +67,9 @@ def gradient_check_weights(layers, input_tensor, label_tensor, bias):
     if bias:
         weights = layers[0].bias
     else:
-        weights = layers[0].weights
+        weights = layers[0].get_weights()
     difference = np.zeros_like(weights)
-    num = np.zeros_like(difference)
+
     it = np.nditer(weights, flags=['multi_index'])
     while not it.finished:
         plus_epsilon = weights.copy()
@@ -81,7 +81,7 @@ def gradient_check_weights(layers, input_tensor, label_tensor, bias):
         if bias:
             layers[0].bias = weights
         else:
-            layers[0].weights = weights
+            layers[0].set_weights(weights)
         for layer in layers[:-1]:
             activation_tensor = layer.forward(activation_tensor)
         layers[-1].forward(activation_tensor, label_tensor)
@@ -98,7 +98,7 @@ def gradient_check_weights(layers, input_tensor, label_tensor, bias):
         if bias:
             layers[0].bias = plus_epsilon
         else:
-            layers[0].weights = plus_epsilon
+            layers[0].set_weights(plus_epsilon)
         plus_epsilon_activation = input_tensor.copy()
         for layer in layers[:-1]:
             plus_epsilon_activation = layer.forward(plus_epsilon_activation)
@@ -106,7 +106,7 @@ def gradient_check_weights(layers, input_tensor, label_tensor, bias):
         if bias:
             layers[0].bias = minus_epsilon
         else:
-            layers[0].weights = minus_epsilon
+            layers[0].set_weights(minus_epsilon)
         minus_epsilon_activation = input_tensor.copy()
         for layer in layers[:-1]:
             minus_epsilon_activation = layer.forward(minus_epsilon_activation)
@@ -115,7 +115,7 @@ def gradient_check_weights(layers, input_tensor, label_tensor, bias):
         lower_error = layers[-1].forward(minus_epsilon_activation, label_tensor)
 
         numerical_derivative = (upper_error - lower_error) / (2 * epsilon)
-        num[it.multi_index] = numerical_derivative
+
         normalizing_constant = max(np.abs(analytical_derivative), np.abs(numerical_derivative))
 
         if normalizing_constant < 1e-15:
@@ -123,10 +123,8 @@ def gradient_check_weights(layers, input_tensor, label_tensor, bias):
         else:
             difference[it.multi_index] = np.abs(analytical_derivative - numerical_derivative) / normalizing_constant
 
-
         it.iternext()
     return difference
-
 
 
 def calculate_accuracy(results, labels):
@@ -155,7 +153,6 @@ def shuffle_data(input_tensor, label_tensor):
     return (np.array(shuffled_input)), (np.array(shuffled_labels))
 
 
-
 class RandomData:
     def __init__(self, input_size, batch_size, categories):
         self.input_size = input_size
@@ -171,7 +168,6 @@ class RandomData:
             self.label_tensor[i, np.random.randint(0, self.categories)] = 1
 
         return input_tensor, self.label_tensor
-
 
 
 class IrisData:
@@ -207,7 +203,6 @@ class IrisData:
     def get_test_set(self):
         return self._input_tensor_test, self._label_tensor_test
 
-
 class DigitData:
     def __init__(self, batch_size):
         self.batch_size = batch_size
@@ -241,8 +236,6 @@ class DigitData:
 
     def get_test_set(self):
         return self._input_tensor_test, self._label_tensor_test
-
-
 
 
 class MNISTData:
@@ -322,4 +315,3 @@ class MNISTData:
         img = img[:num, :]
         one_hot = one_hot[:num, :]
         return img, one_hot
-
