@@ -11,33 +11,6 @@ from Optimization import Optimizers
 
 class Conv:
 
-    # def __init__(self, input_image_shape, stride_shape, convolution_shape, num_kernels):
-    #
-    #     # z, y, x order
-    #     # Check depth S (z) of kernel and image identical (11)
-    #     if input_image_shape[0] != convolution_shape[0]:
-    #         raise ValueError("Kernel and image have to have the same depth!")
-    #         pass
-    #     self.input_image_shape = input_image_shape
-    #     self.stride_shape = stride_shape
-    #     self.convolution_shape = convolution_shape
-    #     self.num_kernels = num_kernels  # Equals H <-> output depth
-    #
-    #     # Learning rate
-    #     self.delta = 1
-    #
-    #     # Initialize the parameters of this layer uniformly random in the range [0; 1)
-    #     self.weights = np.random.uniform(0, 1, ((num_kernels,) + convolution_shape))
-    #     self.bias = np.random.uniform(0, 1, num_kernels)
-    #
-    #     self.grad_wrt_weights = None
-    #     self.grad_wrt_bias = None
-    #
-    #     self.optimizer_weights = None
-    #     self.optimizer_bias = None
-    #
-    #     self.output_shape = None
-
     def __init__(self, stride_shape, convolution_shape, num_kernels, learning_rate=1):
         self.stride_shape   = stride_shape
         self.conv_shape     = convolution_shape
@@ -98,6 +71,12 @@ class Conv:
 
     def get_gradient_weights(self):
         return self.gradient_weights
+
+    def get_weights(self):
+        return self.weights
+
+    def set_weights(self, weights):
+        self.weights = weights
 
 
     def forward(self, input_tensor):

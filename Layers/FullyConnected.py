@@ -51,6 +51,12 @@ class FullyConnected(Base.Base):
         self.bias = bias_initializer.initialize([1, self.output_size], 1, self.output_size)
         self.weights = np.vstack([self.weights, self.bias])
 
+    def get_weights(self):
+        return self.weights
+
+    def set_weights(self, weights):
+        self.weights = weights
+
 
 if __name__ == '__main__':
     dummy = 1

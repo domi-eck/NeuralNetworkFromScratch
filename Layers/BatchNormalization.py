@@ -179,6 +179,12 @@ class BatchNormalization(Base.Base):
     def get_gradient_weights(self):
         return self.dgamma
 
+    def get_weights(self):
+        return self.weights
+
+    def set_weights(self, weights):
+        self.weights = weights
+
     def initialize(self, weights_initializer, bias_initializer):
         self.weightsInitializer = weights_initializer
         self.biasInitializer    = bias_initializer
