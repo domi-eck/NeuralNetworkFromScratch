@@ -45,7 +45,7 @@ class RNN:
     def forward(self, input_tensor):
         """
         Consider the batch dimension as the time dimension of a sequence over which the recurrence is performed.
-        The first hidden state for this iteration is all zero if the boolean member variable is False,
+        The first hidden state for this iteration is all zero if same_sequence is False,
         otherwise restore the hidden state from the last iteration.
         Composed parts of the RNN from other layers, which are already implemented.
         :param input_tensor: shape = (time, features)
@@ -56,21 +56,23 @@ class RNN:
         self.output = np.zeros([self.bptt_length, self.output_size])
 
         # do the calculation iteratively for every time step
-        for t in np.arange(self.bptt_length):
+        for time in np.arange(self.bptt_length):
 
-            # take input of the given time
-            input = input_tensor[t]
+            # check if we are in same sequence and if the hidden states should be reused
+            if self.same_sequence is False:
+                self.hidden_state = np.zeros(self.hidden_size)
+                self.toggle_memory()
 
             # calculate new hidden state:
             yhh = np.dot(self.hidden_state, self.whh)
-            yxh = np.dot(input, self.wxh)
+            yxh = np.dot(input_tensor[time], self.wxh)
             self.hidden_state = np.tanh(yhh + yxh + self.bh)
 
             # calculate output
             sigmoid_input = np.dot(self.hidden_state, self.why) + self.by
             yt = self.sigmoid.forward(sigmoid_input)
 
-            self.output[t] = yt
+            self.output[time] = yt
 
         return self.output
 
