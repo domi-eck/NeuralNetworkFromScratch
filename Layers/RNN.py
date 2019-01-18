@@ -1,5 +1,6 @@
 import numpy as np
 from Layers import Sigmoid
+from Layers import TanH
 
 class RNN:
     def __init__(self, input_size, hidden_size, output_size, bptt_length):
@@ -28,6 +29,7 @@ class RNN:
 
         # init activation functions
         self.sigmoid = Sigmoid.Sigmoid()
+        self.tanh = TanH.TanH()
 
         # init output
         self.output = np.zeros([self.bptt_length, self.output_size])
@@ -54,6 +56,7 @@ class RNN:
 
         # init output
         self.output = np.zeros([self.bptt_length, self.output_size])
+        self.u = [np.array([])] * self.bptt_length
 
         # do the calculation iteratively for every time step
         for time in np.arange(self.bptt_length):
@@ -66,7 +69,8 @@ class RNN:
             # calculate new hidden state:
             yhh = np.dot(self.hidden_state, self.whh)
             yxh = np.dot(input_tensor[time], self.wxh)
-            self.hidden_state = np.tanh(yhh + yxh + self.bh)
+            self.u[time] = yhh + yxh + self.bh
+            self.hidden_state = np.tanh(self.u[time])
 
             # calculate output
             sigmoid_input = np.dot(self.hidden_state, self.why) + self.by
@@ -75,4 +79,31 @@ class RNN:
             self.output[time] = yt
 
         return self.output
+
+    def backward(self, error_tensor):
+        """
+        Go “backwards” through the unfolded unit, starting at final time step t iteratively compute gradients for
+        t = T , ..., 1
+        :param error_tensor:
+        :return:
+        """
+        # taken from script, page 18
+        # delta_o,t = sigmoid' * dL
+        # delta_why,t = delta_o,t * h,t
+        # delta_by,t = delta_o,t
+
+        # go through time backward
+        for time in np.arange(self.bptt_length)[::-1]:
+            # check if this is most future Time step
+            if time == (self.bptt_length - 1):
+                # calculate delta h_t
+                # ToDo acutally self.why should be transposed
+                self.delta_h_t = np.dot(self.why, error_tensor[time])
+            # do calculation for every normal step between 0 and last
+            else:
+                hidden_state_influence = np.dot(self.why, error_tensor[time])
+                tanh_backward = self.tanh.backward(self.u[time])
+
+
+
 
