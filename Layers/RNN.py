@@ -19,7 +19,7 @@ class RNN:
         self.output_size = output_size
         self.bptt_length = bptt_length  # (batch size bzw. time dimension)
 
-        self.hidden_state = np.zeros(hidden_size)
+        self.hidden_state = np.zeros([self.bptt_length + 1, self.hidden_size])
         self.same_sequence = False
 
 
@@ -72,16 +72,19 @@ class RNN:
 
             # check if we are in same sequence and if the hidden states should be reused
             if self.same_sequence is False:
-                self.hidden_state = np.zeros(self.hidden_size)
+                self.hidden_state[time] = np.zeros(self.hidden_size)
                 self.toggle_memory()
 
-            # try with fully connected
-            x_tilde = np.concatenate([self.hidden_state, input_tensor[time]])
+            # calculate h_t
+            x_tilde = np.concatenate([self.hidden_state[time], input_tensor[time]])
             self.u[time] = self.list_fully_connected_ht[time].forward(np.expand_dims(x_tilde, 0))
-            self.hidden_state = self.list_tanh[time].forward(self.u[time])[0]
+            # modulo operation two write last hidden state back to the first hidden state, so it can be used
+            # by the next forward call if same_sequence is True
+            self.hidden_state[(time + 1) % (self.bptt_length - 1)] = self.list_tanh[time].forward(self.u[time])[0]
 
             # calculate output y_t:
-            yt = self.list_fully_connected_yt[time].forward(np.expand_dims(self.hidden_state, 0))
+            yt = self.list_fully_connected_yt[time].forward(
+                np.expand_dims(self.hidden_state[(time + 1) % (self.bptt_length - 1)], 0))
             self.output[time] = yt
 
         return self.output
