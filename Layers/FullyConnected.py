@@ -10,6 +10,7 @@ class FullyConnected(Base.Base):
         self.weights = np.random.rand(input_size +1, output_size)
         self.delta = delta
         self.hasOptimizer = False
+
     def set_optimizer(self, optimizer):
         self.optimizer = optimizer
         self.hasOptimizer = True
@@ -25,20 +26,18 @@ class FullyConnected(Base.Base):
         input_tensor = np.hstack([input_tensor, b])
         self.last_input_tensor = input_tensor
 
-
         return np.dot(input_tensor, self.weights)
-
 
     def backward(self, error_tensor):
 
         self.gradient = np.dot(self.last_input_tensor.transpose(), error_tensor)
-        #now with optimizer#
-        #check if optimizer is used
+        # now with optimizer#
+        # check if optimizer is used
         if hasattr(self, 'optimizer'):
             self.weights = self.optimizer.calculate_update(self.delta, self.weights, self.gradient)
 
-        #end of with optimizer#
-        #removing the bais
+        # end of with optimizer#
+        # removing the bais
         self.back_output = self.weights[0:np.size(self.weights, 0) - 1, :]
         return np.dot(error_tensor, self.back_output.transpose())
 

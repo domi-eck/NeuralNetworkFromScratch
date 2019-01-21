@@ -14,6 +14,7 @@ class RNN:
         :param bptt_length: controls how many steps backwards are considered in the calculation of the gradient
                             with respect to the weights
         """
+        # parameter for Forward
         self.input_size = input_size
         self.hidden_size = hidden_size
         self.output_size = output_size
@@ -24,7 +25,10 @@ class RNN:
 
         # parameters for backward
         self.hidden_gradients = np.zeros([self.bptt_length + 1, self.hidden_size])
+        self.ht_weight_gradients = np.zeros([self.bptt_length, self.hidden_size + self.input_size + 1, self.hidden_size])
+        self.yt_weight_gradients = np.zeros([self.bptt_length, self.hidden_size + 1, self.output_size])
 
+        self.hasOptimizer = False
 
         """ Activations and weights of every time step are needed for the backward pass
          therefore the activations are stored in the objects of Sigmoid and TanH class, 
@@ -45,6 +49,16 @@ class RNN:
             (self.hidden_size + self.input_size), self.hidden_size)] * self.bptt_length
         self.list_fully_connected_yt = [FullyConnected.FullyConnected(
             self.hidden_size, self.output_size)] * self.bptt_length
+
+        # initialize the weights
+        self.ht_weights = np.random.rand(self.hidden_size + self.input_size + 1, self.hidden_size)
+        self.yt_weights = np.random.rand(self.hidden_size + 1, self.output_size)
+
+        for layer in self.list_fully_connected_ht:
+            layer.set_weights(self.ht_weights)
+
+        for layer in self.list_fully_connected_yt:
+            layer.set_weights(self.yt_weights)
 
     def toggle_memory(self):
         """
@@ -120,5 +134,21 @@ class RNN:
             # add this two elements together to the hidden gradient
             self.hidden_gradients[time] = delta_y + delta_h
 
-            # ToDo, each fully connected Layer has at the moment his own weights, but all should use the same weights
+            # get the gradients
+            self.ht_weight_gradients[time] = self.list_fully_connected_ht[time].get_gradient_weights()
+            self.yt_weight_gradients[time] = self.list_fully_connected_yt[time].get_gradient_weights()
+
+        # calculate the gradients for update
+        sum_ht_gradient = np.sum(self.ht_weight_gradients, 0)
+        sum_yt_gradient = np.sum(self.yt_weight_gradients, 0)
+
+        return delta_y
+
+
+    def set_optimizer(self, optimizer):
+        self.optimizer = optimizer
+        self.hasOptimizer = True
+
+
+# ToDo only one fully connected layer is needed
 
