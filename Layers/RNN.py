@@ -28,6 +28,9 @@ class RNN:
         self.ht_weight_gradients = np.zeros([self.bptt_length, self.hidden_size + self.input_size + 1, self.hidden_size])
         self.yt_weight_gradients = np.zeros([self.bptt_length, self.hidden_size + 1, self.output_size])
 
+        # error which should be past out of the whole RNN
+        self.error_xt = np.zeros([self.bptt_length, self.input_size])
+
         self.hasOptimizer = False
 
         """ Activations and weights of every time step are needed for the backward pass
@@ -129,7 +132,9 @@ class RNN:
             delta_h = self.list_tanh[time].backward(self.hidden_gradients[time + 1])[0]
             # because tis fully connected combines the normal input and the old hidden state, only the output
             # for the hidden state is important to the gradient
-            delta_h = self.list_fully_connected_ht[time].backward(np.expand_dims(delta_h, 0))[0, 0:self.hidden_size]
+            delta_hxb = self.list_fully_connected_ht[time].backward(np.expand_dims(delta_h, 0))[0]
+            delta_h = delta_hxb[0: self.hidden_size]
+
 
             # add this two elements together to the hidden gradient
             self.hidden_gradients[time] = delta_y + delta_h
@@ -138,11 +143,14 @@ class RNN:
             self.ht_weight_gradients[time] = self.list_fully_connected_ht[time].get_gradient_weights()
             self.yt_weight_gradients[time] = self.list_fully_connected_yt[time].get_gradient_weights()
 
+            # write the error
+            self.error_xt[time] = delta_hxb[self.hidden_size: self.input_size + self.hidden_size]
+
         # calculate the gradients for update
         sum_ht_gradient = np.sum(self.ht_weight_gradients, 0)
         sum_yt_gradient = np.sum(self.yt_weight_gradients, 0)
 
-        return delta_y
+        return self.error_xt
 
 
     def set_optimizer(self, optimizer):
