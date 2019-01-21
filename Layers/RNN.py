@@ -91,9 +91,7 @@ class RNN:
             self.hidden_state = self.list_tanh[time].forward(self.u[time])[0]
 
             # calculate output y_t:
-            sigmoid_input = np.dot(self.hidden_state, self.why) + self.by
-            yt = self.list_sigmoid[time].forward(sigmoid_input)
-
+            yt = np.dot(self.hidden_state, self.why) + self.by
             self.output[time] = yt
 
         return self.output
