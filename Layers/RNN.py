@@ -22,6 +22,9 @@ class RNN:
         self.hidden_state = np.zeros([self.bptt_length + 1, self.hidden_size])
         self.same_sequence = False
 
+        # parameters for backward
+        self.hidden_gradients = np.zeros([self.bptt_length + 1, self.hidden_size])
+
 
         """ Activations and weights of every time step are needed for the backward pass
          therefore the activations are stored in the objects of Sigmoid and TanH class, 
@@ -103,12 +106,19 @@ class RNN:
 
         # go through time backward
         for time in np.arange(self.bptt_length)[::-1]:
-            # check if this is most future Time step
-            if time == (self.bptt_length - 1):
-                # calculate delta h_t
-                # ToDo acutally self.why should be transposed
-                self.delta_h_t = np.dot(self.why, error_tensor[time])
-            # do calculation for every normal step between 0 and last
-            else:
-                hidden_state_influence = np.dot(self.why, error_tensor[time])
-                tanh_backward = self.tanh.backward(self.u[time])
+            # calculate delta h_t with consists of two elements:
+
+            # 1. (dot/dht)*gradient_ot with ot = Why*ht + by
+            delta_y = self.list_fully_connected_yt[time].backward(np.expand_dims(error_tensor[time], 0))[0]
+
+            # 2. (dh(t+1)/dht) * gradient_h(t+1) with tanH(Whn*h(t-1) + Wxh*xt + bh)
+            delta_h = self.list_tanh[time].backward(self.hidden_gradients[time + 1])[0]
+            # because tis fully connected combines the normal input and the old hidden state, only the output
+            # for the hidden state is important to the gradient
+            delta_h = self.list_fully_connected_ht[time].backward(np.expand_dims(delta_h, 0))[0, 0:self.hidden_size]
+
+            # add this two elements together to the hidden gradient
+            self.hidden_gradients[time] = delta_y + delta_h
+
+            # ToDo, each fully connected Layer has at the moment his own weights, but all should use the same weights
+
