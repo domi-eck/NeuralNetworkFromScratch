@@ -67,6 +67,10 @@ class RNN:
         :return: input tensor for the next layer
         """
 
+        # init output with zeros
+        # ToDo why is this init needed here?
+        self.output = np.zeros([self.bptt_length, self.output_size])
+
         # do the calculation iteratively for every time step
         for time in np.arange(self.bptt_length):
 
@@ -76,15 +80,15 @@ class RNN:
                 self.toggle_memory()
 
             # calculate new hidden state h_t:
-            yhh = np.dot(self.hidden_state, self.whh)
-            yxh = np.dot(input_tensor[time], self.wxh)
-            self.u[time] = yhh + yxh + self.bh
-            self.hidden_state = self.list_tanh[time].forward(self.u[time])
+            # yhh = np.dot(self.hidden_state, self.whh)
+            # yxh = np.dot(input_tensor[time], self.wxh)
+            # self.u[time] = yhh + yxh + self.bh
+            # self.hidden_state = self.list_tanh[time].forward(self.u[time])
 
             # try with fully connected
-            # x_tilde = np.concatenate([self.hidden_state, input_tensor[time]])
-            # self.u[time] = self.list_fully_connected_ht[time].forward(np.expand_dims(x_tilde, 0))
-            # self.hidden_state = self.list_tanh[time].forward(self.u[time])[0]
+            x_tilde = np.concatenate([self.hidden_state, input_tensor[time]])
+            self.u[time] = self.list_fully_connected_ht[time].forward(np.expand_dims(x_tilde, 0))
+            self.hidden_state = self.list_tanh[time].forward(self.u[time])[0]
 
             # calculate output y_t:
             sigmoid_input = np.dot(self.hidden_state, self.why) + self.by
