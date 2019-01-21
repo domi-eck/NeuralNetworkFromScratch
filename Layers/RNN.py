@@ -72,7 +72,7 @@ class RNN:
         self.output = np.zeros([self.bptt_length, self.output_size])
 
         # do the calculation iteratively for every time step
-        for time in np.arange(self.bptt_length):
+        for time in np.arange(input_tensor.shape[0]):
 
             # check if we are in same sequence and if the hidden states should be reused
             if self.same_sequence is False:
