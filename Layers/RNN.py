@@ -22,12 +22,6 @@ class RNN:
         self.hidden_state = np.zeros(hidden_size)
         self.same_sequence = False
 
-        # init of weights for hidden state
-        self.whh = np.random.rand(hidden_size, hidden_size)
-        self.wxh = np.random.rand(input_size, hidden_size)
-        self.why = np.random.rand(hidden_size, output_size)
-        self.bh = np.ones(hidden_size)
-        self.by = np.ones(output_size)
 
         """ Activations and weights of every time step are needed for the backward pass
          therefore the activations are stored in the objects of Sigmoid and TanH class, 
@@ -46,6 +40,8 @@ class RNN:
         # fully connected instances; concatenated input -> [h_(t-1), x_t, b]
         self.list_fully_connected_ht = [FullyConnected.FullyConnected(
             (self.hidden_size + self.input_size), self.hidden_size)] * self.bptt_length
+        self.list_fully_connected_yt = [FullyConnected.FullyConnected(
+            self.hidden_size, self.output_size)] * self.bptt_length
 
     def toggle_memory(self):
         """
@@ -79,19 +75,13 @@ class RNN:
                 self.hidden_state = np.zeros(self.hidden_size)
                 self.toggle_memory()
 
-            # calculate new hidden state h_t:
-            # yhh = np.dot(self.hidden_state, self.whh)
-            # yxh = np.dot(input_tensor[time], self.wxh)
-            # self.u[time] = yhh + yxh + self.bh
-            # self.hidden_state = self.list_tanh[time].forward(self.u[time])
-
             # try with fully connected
             x_tilde = np.concatenate([self.hidden_state, input_tensor[time]])
             self.u[time] = self.list_fully_connected_ht[time].forward(np.expand_dims(x_tilde, 0))
             self.hidden_state = self.list_tanh[time].forward(self.u[time])[0]
 
             # calculate output y_t:
-            yt = np.dot(self.hidden_state, self.why) + self.by
+            yt = self.list_fully_connected_yt[time].forward(np.expand_dims(self.hidden_state, 0))
             self.output[time] = yt
 
         return self.output
