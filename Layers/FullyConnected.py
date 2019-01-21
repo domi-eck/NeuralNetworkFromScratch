@@ -56,6 +56,9 @@ class FullyConnected(Base.Base):
     def set_weights(self, weights):
         self.weights = weights
 
+    def set_bias(self, bias):
+        self.bias = bias
+
 
 if __name__ == '__main__':
     dummy = 1

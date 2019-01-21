@@ -2,6 +2,7 @@ import numpy as np
 from Layers import Sigmoid
 from Layers import TanH
 from Layers import FullyConnected
+from Optimization import Optimizers
 
 
 class RNN:
@@ -31,7 +32,10 @@ class RNN:
         # error which should be past out of the whole RNN
         self.error_xt = np.zeros([self.bptt_length, self.input_size])
 
-        self.hasOptimizer = False
+        # init the optimizer parameter
+        self.has_optimizer = False
+        self.optimizer = None
+        self.learning_rate = 1
 
         """ Activations and weights of every time step are needed for the backward pass
          therefore the activations are stored in the objects of Sigmoid and TanH class, 
@@ -116,15 +120,10 @@ class RNN:
         :param error_tensor:
         :return:
         """
-        # taken from script, page 18
-        # delta_o,t = sigmoid' * dL
-        # delta_why,t = delta_o,t * h,t
-        # delta_by,t = delta_o,t
-
         # go through time backward
         for time in np.arange(self.bptt_length)[::-1]:
-            # calculate delta h_t with consists of two elements:
 
+            # calculate delta h_t with consists of two elements:
             # 1. (dot/dht)*gradient_ot with ot = Why*ht + by
             delta_y = self.list_fully_connected_yt[time].backward(np.expand_dims(error_tensor[time], 0))[0]
 
@@ -135,7 +134,6 @@ class RNN:
             delta_hxb = self.list_fully_connected_ht[time].backward(np.expand_dims(delta_h, 0))[0]
             delta_h = delta_hxb[0: self.hidden_size]
 
-
             # add this two elements together to the hidden gradient
             self.hidden_gradients[time] = delta_y + delta_h
 
@@ -143,19 +141,40 @@ class RNN:
             self.ht_weight_gradients[time] = self.list_fully_connected_ht[time].get_gradient_weights()
             self.yt_weight_gradients[time] = self.list_fully_connected_yt[time].get_gradient_weights()
 
-            # write the error
+            # write the error, which is part of the delta_hxb
             self.error_xt[time] = delta_hxb[self.hidden_size: self.input_size + self.hidden_size]
 
         # calculate the gradients for update
         sum_ht_gradient = np.sum(self.ht_weight_gradients, 0)
         sum_yt_gradient = np.sum(self.yt_weight_gradients, 0)
 
-        return self.error_xt
+        # optimize the weights
+        if self.has_optimizer is True:
+            self.yt_weights = self.optimizer.calculate_update(self.learning_rate, self.yt_weights, sum_yt_gradient)
+            self.ht_weights = self.optimizer.calculate_update(self.learning_rate, self.ht_weights, sum_ht_gradient)
+        else:
+            self.ht_weights = self.ht_weights - self.learning_rate*sum_ht_gradient
+            self.yt_weights = self.yt_weights - self.learning_rate*sum_yt_gradient
 
+        for layer in self.list_fully_connected_ht:
+            layer.set_weights(self.ht_weights)
+        for layer in self.list_fully_connected_yt:
+            layer.set_weights(self.yt_weights)
+
+        return self.error_xt
 
     def set_optimizer(self, optimizer):
         self.optimizer = optimizer
-        self.hasOptimizer = True
+        self.has_optimizer = True
+
+    def initialize(self, weights_initializer, bias_initializer):
+        for layer in self.list_fully_connected_yt:
+            layer.initialize(weights_initializer, bias_initializer)
+        for layer in self.list_fully_connected_ht:
+            layer.initialize(weights_initializer, bias_initializer)
+
+    def get_weights(self):
+        return None
 
 
 # ToDo only one fully connected layer is needed
