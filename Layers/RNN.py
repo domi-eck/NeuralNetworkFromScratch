@@ -1,6 +1,7 @@
 import numpy as np
 from Layers import Sigmoid
 from Layers import TanH
+from Layers import FullyConnected
 
 
 class RNN:
@@ -42,6 +43,10 @@ class RNN:
         # init output with zeros
         self.output = np.zeros([self.bptt_length, self.output_size])
 
+        # fully connected instances; concatenated input -> [h_(t-1), x_t, b]
+        self.list_fully_connected_ht = [FullyConnected.FullyConnected(
+            (self.hidden_size + self.input_size), self.hidden_size)] * self.bptt_length
+
     def toggle_memory(self):
         """
         switches a boolean member variable "same_sequence" representing whether the RNN regards subsequent sequences as
@@ -75,6 +80,11 @@ class RNN:
             yxh = np.dot(input_tensor[time], self.wxh)
             self.u[time] = yhh + yxh + self.bh
             self.hidden_state = self.list_tanh[time].forward(self.u[time])
+
+            # try with fully connected
+            # x_tilde = np.concatenate([self.hidden_state, input_tensor[time]])
+            # self.u[time] = self.list_fully_connected_ht[time].forward(np.expand_dims(x_tilde, 0))
+            # self.hidden_state = self.list_tanh[time].forward(self.u[time])[0]
 
             # calculate output y_t:
             sigmoid_input = np.dot(self.hidden_state, self.why) + self.by
