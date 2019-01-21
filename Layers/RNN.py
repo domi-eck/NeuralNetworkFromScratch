@@ -2,6 +2,7 @@ import numpy as np
 from Layers import Sigmoid
 from Layers import TanH
 
+
 class RNN:
     def __init__(self, input_size, hidden_size, output_size, bptt_length):
         """
@@ -27,11 +28,18 @@ class RNN:
         self.bh = np.ones(hidden_size)
         self.by = np.ones(output_size)
 
-        # init activation functions
-        self.sigmoid = Sigmoid.Sigmoid()
-        self.tanh = TanH.TanH()
+        """ Activations and weights of every time step are needed for the backward pass
+         therefore the activations are stored in the objects of Sigmoid and TanH class, 
+         there is a instance for every time step: """
+        # init Sigmoid functions, also to store them for the backward algorithm
+        self.list_sigmoid = [Sigmoid.Sigmoid()] * self.bptt_length
+        # init Tanh functions, also to store them for the backward algorithm
+        self.list_tanh = [TanH.TanH()] * self.bptt_length
+        # also the init of the TanH has to be stored
+        # init input for tanh function, store every step for backward
+        self.u = [np.array([])] * self.bptt_length
 
-        # init output
+        # init output with zeros
         self.output = np.zeros([self.bptt_length, self.output_size])
 
     def toggle_memory(self):
@@ -54,10 +62,6 @@ class RNN:
         :return: input tensor for the next layer
         """
 
-        # init output
-        self.output = np.zeros([self.bptt_length, self.output_size])
-        self.u = [np.array([])] * self.bptt_length
-
         # do the calculation iteratively for every time step
         for time in np.arange(self.bptt_length):
 
@@ -66,15 +70,15 @@ class RNN:
                 self.hidden_state = np.zeros(self.hidden_size)
                 self.toggle_memory()
 
-            # calculate new hidden state:
+            # calculate new hidden state h_t:
             yhh = np.dot(self.hidden_state, self.whh)
             yxh = np.dot(input_tensor[time], self.wxh)
             self.u[time] = yhh + yxh + self.bh
-            self.hidden_state = np.tanh(self.u[time])
+            self.hidden_state = self.list_tanh[time].forward(self.u[time])
 
-            # calculate output
+            # calculate output y_t:
             sigmoid_input = np.dot(self.hidden_state, self.why) + self.by
-            yt = self.sigmoid.forward(sigmoid_input)
+            yt = self.list_sigmoid[time].forward(sigmoid_input)
 
             self.output[time] = yt
 
@@ -103,7 +107,3 @@ class RNN:
             else:
                 hidden_state_influence = np.dot(self.why, error_tensor[time])
                 tanh_backward = self.tanh.backward(self.u[time])
-
-
-
-
