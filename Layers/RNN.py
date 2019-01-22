@@ -21,7 +21,7 @@ class RNN:
         self.output_size = output_size
         self.bptt_length = bptt_length  # (batch size bzw. time dimension)
 
-        self.hidden_state = np.zeros([self.bptt_length + 1, self.hidden_size])
+        self.hidden_state = np.zeros([self.bptt_length, self.hidden_size])
         self.same_sequence = False
 
         # parameters for backward
@@ -128,7 +128,7 @@ class RNN:
             delta_y = self.list_fully_connected_yt[time].backward(np.expand_dims(error_tensor[time], 0))[0]
 
             # 2. (dh(t+1)/dht) * gradient_h(t+1) with tanH(Whn*h(t-1) + Wxh*xt + bh)
-            delta_h = self.list_tanh[time].backward(self.hidden_gradients[time + 1])[0]
+            delta_h = self.list_tanh[time].backward(self.hidden_gradients[(time + 1) % self.bptt_length])[0]
             # because tis fully connected combines the normal input and the old hidden state, only the output
             # for the hidden state is important to the gradient
             delta_hxb = self.list_fully_connected_ht[time].backward(np.expand_dims(delta_h, 0))[0]
