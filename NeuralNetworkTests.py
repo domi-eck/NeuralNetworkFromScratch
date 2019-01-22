@@ -1038,7 +1038,8 @@ class TestRNN(unittest.TestCase):
         self.assertEqual(output_tensor.shape[0], self.batch_size)
 
     def test_forward_stateful(self):
-        layer = RNN.RNN(self.input_size, self.hidden_size, self.output_size, self.batch_size)
+        bptt_length = 2
+        layer = RNN.RNN(self.input_size, self.hidden_size, self.output_size, bptt_length)
 
         input_vector = np.random.rand(self.input_size, 1).T
         input_tensor = np.tile(input_vector, (2, 1))
@@ -1094,8 +1095,10 @@ class TestRNN(unittest.TestCase):
         self.assertLessEqual(np.sum(difference), 1e-4)
 
     def test_bias(self):
+        bptt_length = 1
         input_tensor = np.zeros((1, 100000))
-        layer = RNN.RNN(100000, 100, 1, self.batch_size)
+        layer = RNN.RNN(100000, 100, 1, bptt_length)
+        layer.initialize(Initializers.UniformRandom(), Initializers.UniformRandom())
         result = layer.forward(input_tensor)
         self.assertGreater(np.sum(result), 0)
 
@@ -1120,10 +1123,11 @@ class TestLSTM(unittest.TestCase):
         self.assertEqual(output_tensor.shape[0], self.batch_size)
 
     def test_forward_stateful(self):
-        layer = LSTM.LSTM(self.input_size, self.hidden_size, self.output_size, self.batch_size)
+        bptt_length = 2
+        layer = LSTM.LSTM(self.input_size, self.hidden_size, self.output_size, bptt_length)
 
         input_vector = np.random.rand(1, self.input_size)
-        input_tensor = np.tile(input_vector, (2, 1))
+        input_tensor = np.tile(input_vector, (bptt_length, 1))
 
         output_tensor = layer.forward(input_tensor)
 
@@ -1176,8 +1180,10 @@ class TestLSTM(unittest.TestCase):
         self.assertLessEqual(np.sum(difference), 1e-3)
 
     def test_bias(self):
+        bptt_length = 1
         input_tensor = np.zeros((1, 100000))
-        layer = LSTM.LSTM(100000, 100, 1, self.batch_size)
+        layer = LSTM.LSTM(100000, 100, 1, bptt_length)
+        layer.initialize(Initializers.UniformRandom(), Initializers.UniformRandom())
         result = layer.forward(input_tensor)
         self.assertGreater(np.sum(result), 0)
 

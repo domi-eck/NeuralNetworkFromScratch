@@ -104,11 +104,11 @@ class RNN:
             self.u[time] = self.list_fully_connected_ht[time].forward(np.expand_dims(x_tilde, 0))
             # modulo operation two write last hidden state back to the first hidden state, so it can be used
             # by the next forward call if same_sequence is True
-            self.hidden_state[(time + 1) % (self.bptt_length - 1)] = self.list_tanh[time].forward(self.u[time])[0]
+            self.hidden_state[(time + 1) % self.bptt_length] = self.list_tanh[time].forward(self.u[time])[0]
 
             # calculate output y_t:
             yt = self.list_fully_connected_yt[time].forward(
-                np.expand_dims(self.hidden_state[(time + 1) % (self.bptt_length - 1)], 0))
+                np.expand_dims(self.hidden_state[(time + 1) % self.bptt_length], 0))
             self.output[time] = yt
 
         return self.output
