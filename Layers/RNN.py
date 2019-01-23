@@ -25,7 +25,7 @@ class RNN:
         self.same_sequence = False
 
         # parameters for backward
-        self.hidden_gradients = np.zeros([self.bptt_length + 1, self.hidden_size])
+        self.hidden_gradients = np.zeros([self.bptt_length +1, self.hidden_size])
         self.ht_weight_gradients = np.zeros([self.bptt_length, self.hidden_size + self.input_size + 1, self.hidden_size])
         self.yt_weight_gradients = np.zeros([self.bptt_length, self.hidden_size + 1, self.output_size])
 
@@ -101,10 +101,10 @@ class RNN:
 
             # calculate h_t
             x_tilde = np.concatenate([self.hidden_state[time], input_tensor[time]])
-            self.u[time] = self.list_fully_connected_ht[time].forward(np.expand_dims(x_tilde, 0))
+            self.u[time] = self.list_fully_connected_ht[time].forward(np.expand_dims(x_tilde, 0))[0]
             # modulo operation two write last hidden state back to the first hidden state, so it can be used
             # by the next forward call if same_sequence is True
-            self.hidden_state[(time + 1) % self.bptt_length] = self.list_tanh[time].forward(self.u[time])[0]
+            self.hidden_state[(time + 1) % self.bptt_length] = self.list_tanh[time].forward(self.u[time])
 
             # calculate output y_t:
             yt = self.list_fully_connected_yt[time].forward(
@@ -120,33 +120,56 @@ class RNN:
         :param error_tensor:
         :return:
         """
-        # go through time backward
-        for time in np.arange(self.bptt_length)[::-1]:
 
-            # calculate delta h_t with consists of two elements:
-            # 1. (dot/dht)*gradient_ot with ot = Why*ht + by
+        for time in np.arange(error_tensor.shape[0])[::-1]:
+            # Initial delta calculation: dL/dz
+            # self.V.T.dot(delta_o[t]) * (1 - (s[t] ** 2))
             delta_y = self.list_fully_connected_yt[time].backward(np.expand_dims(error_tensor[time], 0))[0]
+            delta_h = self.list_tanh[time].backward(delta_y)
 
-            # 2. (dh(t+1)/dht) * gradient_h(t+1) with tanH(Whn*h(t-1) + Wxh*xt + bh)
-            delta_h = self.list_tanh[time].backward(self.hidden_gradients[(time + 1) % self.bptt_length])[0]
-            # because tis fully connected combines the normal input and the old hidden state, only the output
-            # for the hidden state is important to the gradient
-            delta_hxb = self.list_fully_connected_ht[time].backward(np.expand_dims(delta_h, 0))[0]
-            delta_h = delta_hxb[0: self.hidden_size]
-
-            # add this two elements together to the hidden gradient
-            self.hidden_gradients[time] = delta_y + delta_h
-
-            # get the gradients
-            self.ht_weight_gradients[time] = self.list_fully_connected_ht[time].get_gradient_weights()
+            # dLdV += np.outer(delta_o[t], s[t].T)
             self.yt_weight_gradients[time] = self.list_fully_connected_yt[time].get_gradient_weights()
+            # go back util truncation_length or 0 in time is reached
+            for step in np.arange(max(0, time-self.bptt_length), time + 1)[::-1]:
+                delta_hxb = self.list_fully_connected_ht[step].backward(np.expand_dims(delta_h, 0))[0]
+                # ToDo: definitely not sure if this is right, could also be last or the sum over all errors
+                #if step == time:
+                self.error_xt[time] += delta_hxb[self.hidden_size: self.hidden_size + self.input_size]
+                delta_h = delta_hxb[0: self.hidden_size]
+                if step != 0:
+                    delta_h = self.list_tanh[step-1].backward(delta_h)
 
-            # write the error, which is part of the delta_hxb
-            self.error_xt[time] = delta_hxb[self.hidden_size: self.input_size + self.hidden_size]
+                self.ht_weight_gradients[time] += self.list_fully_connected_ht[step].get_gradient_weights()
 
+            self.error_xt[step] = delta_hxb[self.hidden_size: self.hidden_size + self.input_size]
+
+
+
+        #     # 2. (dh(t+1)/dht) * gradient_h(t+1) with tanH(Whn*h(t-1) + Wxh*xt + bh)
+        #     if time + 1 == self.bptt_length:
+        #         delta_h = np.zeros_like(self.hidden_gradients[time])
+        #     else:
+        #         delta_h = self.list_tanh[time].backward(self.hidden_gradients[time + 1])[0]
+        #     # because tis fully connected combines the normal input and the old hidden state, only the output
+        #     # for the hidden state is important to the gradient
+        #
+        #     delta_h = delta_hxb[0: self.hidden_size]
+        #
+        #     # add this two elements together to the hidden gradient
+        #     self.hidden_gradients[time] = delta_y + delta_h
+        #
+        #     # get the gradients
+        #     self.ht_weight_gradients[time] = self.list_fully_connected_ht[time].get_gradient_weights()
+        #     self.yt_weight_gradients[time] = self.list_fully_connected_yt[time].get_gradient_weights()
+        #
+        #     # write the error, which is part of the delta_hxb
+        #     self.error_xt[time] = delta_hxb[self.hidden_size: self.input_size + self.hidden_size]
+        #
         # calculate the gradients for update
         sum_ht_gradient = np.sum(self.ht_weight_gradients, 0)
         sum_yt_gradient = np.sum(self.yt_weight_gradients, 0)
+
+        self.ht_gradient = sum_ht_gradient
 
         # optimize the weights
         if self.has_optimizer is True:
@@ -168,14 +191,28 @@ class RNN:
         self.has_optimizer = True
 
     def initialize(self, weights_initializer, bias_initializer):
-        for layer in self.list_fully_connected_yt:
-            layer.initialize(weights_initializer, bias_initializer)
-        for layer in self.list_fully_connected_ht:
-            layer.initialize(weights_initializer, bias_initializer)
+        for iteration in np.arange(self.bptt_length):
+            if iteration == 0:
+                self.list_fully_connected_yt[iteration].initialize(weights_initializer, bias_initializer)
+            else:
+                self.list_fully_connected_yt[iteration].set_weights(self.list_fully_connected_yt[0].get_weights())
+                self.list_fully_connected_yt[iteration].set_bias(self.list_fully_connected_yt[0].bias)
+
+        for iteration in np.arange(self.bptt_length):
+            if iteration == 0:
+                self.list_fully_connected_ht[iteration].initialize(weights_initializer, bias_initializer)
+            else:
+                self.list_fully_connected_ht[iteration].set_weights(self.list_fully_connected_ht[0].get_weights())
+                self.list_fully_connected_ht[iteration].set_bias(self.list_fully_connected_ht[0].bias)
 
     def get_weights(self):
-        return None
+        return self.ht_weights
+
+    def set_weights(self, weights):
+        self.ht_weights = weights
+
+    def get_gradient_weights(self):
+        return self.ht_gradient
 
 
-# ToDo only one fully connected layer is needed
 
