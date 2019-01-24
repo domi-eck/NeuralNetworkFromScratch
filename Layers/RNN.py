@@ -8,12 +8,17 @@ from Optimization import Optimizers
 class RNN:
     def __init__(self, input_size, hidden_size, output_size, bptt_length):
         """
-        Recurrent Neuronal Network
+        Recurrent Neuronal Network:
+            1. ot = ht*Wy
+            2. ht = tanh(at)
+            3. at = b + h(t-1)*Wh + xt*Wx
         :param input_size: the dimension of the input vector
         :param hidden_size: dimension of the hidden state
         :param output_size:
         :param bptt_length: controls how many steps backwards are considered in the calculation of the gradient
                             with respect to the weights
+
+
         """
         # parameter for Forward
         self.input_size = input_size
@@ -24,9 +29,15 @@ class RNN:
         self.hidden_state = np.zeros([self.bptt_length, self.hidden_size])
         self.same_sequence = False
 
+        # at = b + h(t-1)*Wh + xt*Wx = b + ah + ax
+        self.ax = [np.zeros(self.hidden_size)] * self.bptt_length
+        self.ah = [np.zeros(self.hidden_size)] * self.bptt_length
+        self.a = [np.zeros(self.hidden_size)] * self.bptt_length
+
         # parameters for backward
-        self.hidden_gradients = np.zeros([self.bptt_length +1, self.hidden_size])
-        self.ht_weight_gradients = np.zeros([self.bptt_length, self.hidden_size + self.input_size + 1, self.hidden_size])
+        self.hidden_gradients = np.zeros([self.bptt_length + 1, self.hidden_size])
+        self.xt_weight_gradients = np.zeros([self.bptt_length, self.input_size + 1, self.hidden_size])
+        self.ht_weight_gradients = np.zeros([self.bptt_length, self.hidden_size + 1, self.hidden_size])
         self.yt_weight_gradients = np.zeros([self.bptt_length, self.hidden_size + 1, self.output_size])
 
         # error which should be past out of the whole RNN
@@ -37,29 +48,34 @@ class RNN:
         self.optimizer = None
         self.learning_rate = 1
 
-        """ Activations and weights of every time step are needed for the backward pass
-         therefore the activations are stored in the objects of Sigmoid and TanH class, 
-         there is a instance for every time step: """
-        # init Sigmoid functions, also to store them for the backward algorithm
-        self.list_sigmoid = [Sigmoid.Sigmoid()] * self.bptt_length
+        # Activations and weights of every time step are needed for the backward pass
+        # therefore the activations are stored in the objects of Sigmoid and TanH class,
+        # there is a instance for every time step: """
         # init Tanh functions, also to store them for the backward algorithm
         self.list_tanh = [TanH.TanH()] * self.bptt_length
-        # also the init of the TanH has to be stored
-        # init input for tanh function, store every step for backward
-        self.u = [np.array([])] * self.bptt_length
+
 
         # init output with zeros
         self.output = np.zeros([self.bptt_length, self.output_size])
 
         # fully connected instances; concatenated input -> [h_(t-1), x_t, b]
-        self.list_fully_connected_ht = [FullyConnected.FullyConnected(
-            (self.hidden_size + self.input_size), self.hidden_size)] * self.bptt_length
-        self.list_fully_connected_yt = [FullyConnected.FullyConnected(
-            self.hidden_size, self.output_size)] * self.bptt_length
+        self.list_fully_connected_xt = \
+            [FullyConnected.FullyConnected(self.input_size, self.output_size)] * self.bptt_length
+        self.list_fully_connected_ht = \
+            [FullyConnected.FullyConnected(self.hidden_size, self.hidden_size)] * self.bptt_length
+        self.list_fully_connected_yt = \
+            [FullyConnected.FullyConnected(self.hidden_size, self.output_size)] * self.bptt_length
+
 
         # initialize the weights
-        self.ht_weights = np.random.rand(self.hidden_size + self.input_size + 1, self.hidden_size)
+        self.xt_weights = np.random.rand(self.input_size + 1, self.hidden_size)
+        self.ht_weights = np.random.rand(self.hidden_size + 1, self.hidden_size)
         self.yt_weights = np.random.rand(self.hidden_size + 1, self.output_size)
+
+        for layer in self.list_fully_connected_xt:
+            layer.set_weights(self.xt_weights)
+            # init bias to zero,
+            layer.bias = np.zeros(self.hidden_size)
 
         for layer in self.list_fully_connected_ht:
             layer.set_weights(self.ht_weights)
@@ -79,6 +95,11 @@ class RNN:
 
     def forward(self, input_tensor):
         """
+        Reminder and Notation, forward pass
+        3. ot = ht*Wy
+        2. ht = tanh(at)
+        1. at = b + h(t-1)*Wh + xt*Wx
+
         Consider the batch dimension as the time dimension of a sequence over which the recurrence is performed.
         The first hidden state for this iteration is all zero if same_sequence is False,
         otherwise restore the hidden state from the last iteration.
@@ -99,12 +120,14 @@ class RNN:
                 self.hidden_state[time] = np.zeros(self.hidden_size)
                 self.toggle_memory()
 
-            # calculate h_t
-            x_tilde = np.concatenate([self.hidden_state[time], input_tensor[time]])
-            self.u[time] = self.list_fully_connected_ht[time].forward(np.expand_dims(x_tilde, 0))[0]
+            # calculate at
+            self.ax[time] = self.list_fully_connected_xt[time].forward(np.expand_dims(input_tensor[time], 0))[0]
+            self.ah[time] = self.list_fully_connected_ht[time].forward(np.expand_dims(self.hidden_state[time], 0))[0]
+            self.a[time] = self.ax[time] + self.ah[time]
+
             # modulo operation two write last hidden state back to the first hidden state, so it can be used
             # by the next forward call if same_sequence is True
-            self.hidden_state[(time + 1) % self.bptt_length] = self.list_tanh[time].forward(self.u[time])
+            self.hidden_state[(time + 1) % self.bptt_length] = self.list_tanh[time].forward(self.a[time])
 
             # calculate output y_t:
             yt = self.list_fully_connected_yt[time].forward(
