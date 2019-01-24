@@ -60,7 +60,7 @@ class RNN:
 
         # fully connected instances; concatenated input -> [h_(t-1), x_t, b]
         self.list_fully_connected_xt = \
-            [FullyConnected.FullyConnected(self.input_size, self.output_size)] * self.bptt_length
+            [FullyConnected.FullyConnected(self.input_size, self.hidden_size)] * self.bptt_length
         self.list_fully_connected_ht = \
             [FullyConnected.FullyConnected(self.hidden_size, self.hidden_size)] * self.bptt_length
         self.list_fully_connected_yt = \
@@ -190,6 +190,7 @@ class RNN:
         sum_xt_gradient = np.sum(self.xt_weight_gradients, 0)
 
         self.ht_gradient = sum_ht_gradient
+        self.xt_gradient = sum_xt_gradient
 
         # optimize the weights
         if self.has_optimizer is True:
@@ -234,17 +235,17 @@ class RNN:
                 self.list_fully_connected_xt[iteration].initialize(weights_initializer, bias_initializer)
                 self.list_fully_connected_xt[iteration].bias = np.zeros(self.hidden_size)
             else:
-                self.list_fully_connected_xt[iteration].set_weights(self.list_fully_connected_ht[0].get_weights())
-                self.list_fully_connected_xt[iteration].set_bias(self.list_fully_connected_ht[0].bias)
+                self.list_fully_connected_xt[iteration].set_weights(self.list_fully_connected_xt[0].get_weights())
+                self.list_fully_connected_xt[iteration].set_bias(self.list_fully_connected_xt[0].bias)
 
     def get_weights(self):
-        return np.concatenate(self.ht_weights, self.xt_weights)
+        return self.ht_weights
 
     def set_weights(self, weights):
         self.ht_weights = weights
 
     def get_gradient_weights(self):
-        return np.concatenate(self.ht_weight_gradients, self.xt_weight_gradients)
+        return self.ht_gradient
 
 
 
