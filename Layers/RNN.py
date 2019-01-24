@@ -125,7 +125,7 @@ class RNN:
             # Initial delta calculation: dL/dz
             # self.V.T.dot(delta_o[t]) * (1 - (s[t] ** 2))
             delta_y = self.list_fully_connected_yt[time].backward(np.expand_dims(error_tensor[time], 0))[0]
-            delta_h = self.list_tanh[time].backward(delta_y)
+            da = self.list_tanh[time].backward(delta_y)
 
             # dLdV += np.outer(delta_o[t], s[t].T)
             self.yt_weight_gradients[time] = self.list_fully_connected_yt[time].get_gradient_weights()
@@ -133,15 +133,15 @@ class RNN:
             for step in np.arange(max(0, time-self.bptt_length), time + 1)[::-1]:
                 delta_hxb = self.list_fully_connected_ht[step].backward(np.expand_dims(delta_h, 0))[0]
                 # ToDo: definitely not sure if this is right, could also be last or the sum over all errors
-                #if step == time:
-                self.error_xt[time] += delta_hxb[self.hidden_size: self.hidden_size + self.input_size]
+                if step == time:
+                    self.error_xt[step] = delta_hxb[self.hidden_size: self.hidden_size + self.input_size]
                 delta_h = delta_hxb[0: self.hidden_size]
                 if step != 0:
                     delta_h = self.list_tanh[step-1].backward(delta_h)
 
                 self.ht_weight_gradients[time] += self.list_fully_connected_ht[step].get_gradient_weights()
 
-            self.error_xt[step] = delta_hxb[self.hidden_size: self.hidden_size + self.input_size]
+            #self.error_xt[step] = delta_hxb[self.hidden_size: self.hidden_size + self.input_size]
 
 
 
