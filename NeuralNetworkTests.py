@@ -1082,6 +1082,7 @@ class TestRNN(unittest.TestCase):
         layers.append(layer)
         layers.append(SoftMax.SoftMax())
         difference = Helpers.gradient_check(layers, input_tensor, self.label_tensor)
+        print(difference)
         self.assertLessEqual(np.sum(difference), 1e-4)
 
     def test_gradient_weights(self):
