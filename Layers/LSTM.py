@@ -15,6 +15,9 @@ class LSTM:
         self.bptt_length = bptt_lenght
         #endregion Sizes
 
+        self.error_ht1      = np.zeros([self.bptt_length, self.hidden_size])
+        self.error_cell     = np.zeros([self.bptt_length, self.hidden_size])
+
         self.learning_rate = 0.001
         self.hidden_state = np.zeros([self.bptt_length, self.hidden_size])
         self.cell_state   = np.zeros([self.bptt_length, self.hidden_size])
@@ -101,10 +104,13 @@ class LSTM:
             #f
             f                   = fico[0:self.hidden_size]
             self.f[time]        = self.sigmoid_f[time].forward(f)
+
             i                   = fico[self.hidden_size:self.hidden_size*2]
             self.i[time]        = self.sigmoid_i[time].forward(i)
+
             c_tilde             = fico[self.hidden_size*2:self.hidden_size*3]
             self.c_tilde[time]  = self.tanh_c[time].forward(c_tilde)
+
             o                   = fico[self.hidden_size*3:]
             self.o[time]        = self.sigmoid_o[time].forward(o)
             #endregion
@@ -117,7 +123,7 @@ class LSTM:
 
             #region Updating HiddenState
             self.tanhO[time]                                    = self.tanh_o[time].forward(self.cell_state[(time + 1) % self.bptt_length])
-            self.hidden_state[(time + 1) % self.bptt_length]    = np.multiply(self.tanhO[time], o)
+            self.hidden_state[(time + 1) % self.bptt_length]    = np.multiply(self.tanhO[time], self.o[time])
             #endregion
 
             #region Calculating Output
@@ -129,12 +135,11 @@ class LSTM:
         return self.output
 
     def backward(self, error_tensor):
-        self.sum_Gradients_y = np.zeros_like(self.list_fully_connected_y[-1].get_weights())
+        self.sum_Gradients_y    = np.zeros_like(self.list_fully_connected_y[-1].get_weights())
         self.sum_Gradients_fico = np.zeros_like(self.list_fully_connected_fico[-1].get_weights())
 
         self.error_tensor   = error_tensor
-        self.error_ht1      = np.zeros([self.bptt_length, self.hidden_size])
-        self.error_cell     = np.zeros([self.bptt_length, self.hidden_size])
+
         self.output_x       = np.zeros([self.bptt_length, self.input_size])
 
         if self.same_sequence is False:
@@ -144,7 +149,7 @@ class LSTM:
         for time in np.arange(error_tensor.shape[0])[::-1]:
             error = self.error_tensor[time]
 
-            dh = self.list_fully_connected_y[time].backward(np.expand_dims(error,0))
+            dh = self.list_fully_connected_y[time].backward(np.expand_dims(error,0))[0]
             if time != self.bptt_length-1:
                 dh = dh + self.error_ht1[time+1]
 
@@ -155,9 +160,12 @@ class LSTM:
             dc = self.tanh_o[time].backward(dc)
             if time != self.bptt_length-1:
                 dc = dc + self.error_cell[time+1]
-
             self.error_cell[time] = np.multiply( self.f[time], dc )
-            bf = self.cell_state[time] * dc
+
+            if(time != 0):
+                bf = self.cell_state[time] * dc
+            else:
+                bf = np.zeros([self.hidden_size])
             bf = self.sigmoid_f[time].backward(bf)
 
             bi          = np.multiply( self.c_tilde[time], dc )
@@ -166,8 +174,8 @@ class LSTM:
             bc_tilde    = np.multiply(self.i[time], dc)
             bc_tilde    = self.tanh_c[time].backward(bc_tilde)
 
-            xh = np.hstack([ bc_tilde , bi , bf , bo ])
-            xh = self.list_fully_connected_fico[time].backward(xh)
+            xh = np.hstack([ bf, bi, bc_tilde, bo ])
+            xh = self.list_fully_connected_fico[time].backward(np.expand_dims(xh, 0))[0]
 
 
             #Get gradients
@@ -175,8 +183,8 @@ class LSTM:
             self.sum_Gradients_fico = self.sum_Gradients_fico + self.list_fully_connected_fico[time].get_gradient_weights()
 
 
-            self.error_ht1[time] = xh[0][self.input_size:]
-            self.output_x[time] = xh[0][:self.input_size]
+            self.error_ht1[time] = xh[self.input_size:]
+            self.output_x[time] = xh[:self.input_size]
 
         #region Update
         # optimize the weights
@@ -196,13 +204,15 @@ class LSTM:
 
 
     def get_gradient_weights(self):
-        dummy = 1
+        return self.sum_Gradients_fico
 
     def get_weights(self):
-        dummy = 1
+        return self.fico_weights
 
     def set_weights(self, weights):
-        dummy = 1
+        self.fico_weights = weights
+        for iteration in np.arange(self.bptt_length):
+            self.list_fully_connected_fico[iteration].set_weights(self.fico_weights)
 
     def set_optimizer(self, optimizer):
         self.optimizer      = optimizer
